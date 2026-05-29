@@ -100,7 +100,7 @@ export default function Integrations({ onNavigate }) {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">التكاملات</h1>
-          <p className="text-xl text-gray-600">ربط متجرك مع المنصات الأخرى</p>
+          <p className="text-xl text-gray-600">اربط متجرك مع منصة مكسب واترك الباقى علينا    </p>
         </div>
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">{error}</div>}
         {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">{success}</div>}
