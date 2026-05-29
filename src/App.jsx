@@ -49,6 +49,7 @@ export default function App() {
   const [userSubscription, setUserSubscription] = useState(null);
   const [userName, setUserName] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [isInitialized, setIsInitialized] = useState(false); // لتتبع اكتمال التهيئة
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -85,20 +86,74 @@ export default function App() {
     }
   };
 
-  const handleLogin = async (admin = false) => {
+  // دالة تسجيل الدخول مع إمكانية الاحتفاظ بالصفحة الحالية
+  const performLogin = async (admin = false, preservePage = false) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
     setIsLoggedIn(true);
     setIsAdmin(admin);
-    setCurrentPage('dashboard');
-    setPageData(null);
-    localStorage.setItem('currentPage', 'dashboard');
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      loadImportList(user.id);
-      fetchUserSubscription(user.id);
-      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
-      setUserName(profile?.full_name || user.email);
+    if (!preservePage) {
+      setCurrentPage('dashboard');
+      localStorage.setItem('currentPage', 'dashboard');
     }
+    await loadImportList(user.id);
+    await fetchUserSubscription(user.id);
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+    setUserName(profile?.full_name || user.email);
+    return true;
   };
+
+  // تهيئة التطبيق: استعادة الصفحة المحفوظة والتحقق من الجلسة
+  useEffect(() => {
+    const init = async () => {
+      // 1. استعادة الصفحة المحفوظة (إن وجدت)
+      const savedPage = localStorage.getItem('currentPage');
+      const validPages = [
+        'home', 'catalog', 'pricing', 'services', 'support', 'shipping', 'integrations', 'how', 'about', 'contact', 'register', 'login',
+        'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats',
+        'subscription', 'wallet', 'support-tickets', 'payment', 'integrations',
+        'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'
+      ];
+      let targetPage = savedPage && validPages.includes(savedPage) ? savedPage : 'home';
+      
+      // 2. التحقق من الجلسة
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // جلب بيانات المستخدم لتحديد ما إذا كان admin
+        const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single();
+        const isUserAdmin = profile?.is_admin || false;
+        // تسجيل الدخول مع الاحتفاظ بالصفحة المستعادة
+        setIsLoggedIn(true);
+        setIsAdmin(isUserAdmin);
+        await loadImportList(session.user.id);
+        await fetchUserSubscription(session.user.id);
+        const { data: profileName } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single();
+        setUserName(profileName?.full_name || session.user.email);
+        
+        // إذا كانت الصفحة المستعادة تتطلب تسجيل دخول (مثل dashboard, orders, etc.) فهي صالحة
+        // وإذا كانت صفحة عامة (home, catalog, pricing) نسمح بها أيضاً
+        // لا نغير targetPage إلا إذا كانت غير صالحة (مثلاً login أو register)
+        if (targetPage === 'login' || targetPage === 'register') {
+          targetPage = 'dashboard';
+          localStorage.setItem('currentPage', 'dashboard');
+        }
+      } else {
+        // غير مسجل دخول: نمنع الوصول للصفحات التي تتطلب تسجيل دخول
+        const protectedPages = [
+          'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats',
+          'subscription', 'wallet', 'support-tickets', 'payment', 'integrations',
+          'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'
+        ];
+        if (protectedPages.includes(targetPage)) {
+          targetPage = 'home';
+          localStorage.setItem('currentPage', 'home');
+        }
+      }
+      setCurrentPage(targetPage);
+      setIsInitialized(true);
+    };
+    init();
+  }, []);
 
   const requireSubscription = (actionName) => {
     if (!isLoggedIn) {
@@ -133,7 +188,12 @@ export default function App() {
 
   const navigate = (page, data = null) => {
     if (page === 'login' && data?.returnTo) localStorage.setItem('returnTo', data.returnTo);
-    const dashboardPages = ['dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations', 'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
+    const dashboardPages = [
+      'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products',
+      'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations',
+      'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials',
+      'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'
+    ];
     if (dashboardPages.includes(page) && !isLoggedIn && page !== 'payment') {
       setCurrentPage('login');
       setPageData(null);
@@ -158,20 +218,18 @@ export default function App() {
     if (page === 'catalog') setCatalogCategory(data || 'الكل');
   };
 
-  // استعادة الصفحة المحفوظة عند تحميل التطبيق
-  useEffect(() => {
-    const savedPage = localStorage.getItem('currentPage');
-    const validPages = ['home', 'catalog', 'pricing', 'services', 'support', 'shipping', 'integrations', 'how', 'about', 'contact', 'register', 'login', 'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations', 'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
-    if (savedPage && validPages.includes(savedPage)) {
-      setCurrentPage(savedPage);
+  const handleLogin = async (admin = false) => {
+    // هذه الدالة تُستخدم من Login.jsx بعد تسجيل الدخول
+    // نقوم بتسجيل الدخول ونوجه إلى الصفحة التي كان يحاول الوصول إليها (من localStorage returnTo)
+    const returnTo = localStorage.getItem('returnTo');
+    localStorage.removeItem('returnTo');
+    const success = await performLogin(admin, false);
+    if (success && returnTo && returnTo !== 'login' && returnTo !== 'register') {
+      navigate(returnTo);
+    } else if (success) {
+      navigate('dashboard');
     }
-    // التحقق من الجلسة
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        handleLogin(false);
-      }
-    });
-  }, []);
+  };
 
   const isDashboard = [
     'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products',
@@ -181,6 +239,7 @@ export default function App() {
   ].includes(currentPage);
 
   const renderPage = () => {
+    if (!isInitialized) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full"></div></div>;
     if (currentPage === 'login') return <Login onLogin={handleLogin} onNavigate={navigate} />;
     if (isDashboard && !isLoggedIn) return <Login onLogin={handleLogin} onNavigate={navigate} />;
     if (isDashboard) {
