@@ -182,15 +182,6 @@ export default function Integrations({ onNavigate }) {
             )}
           </div>
         </div>
-        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-8">
-          <h3 className="text-xl font-bold text-blue-900 mb-4">📚 كيفية الحصول على مفاتيح API</h3>
-          <div className="space-y-4 text-blue-800">
-            <div><p className="font-semibold">سلة (Salla):</p><p className="text-sm">لوحة تحكم سلة → الإعدادات → API</p></div>
-            <div><p className="font-semibold">زد (Zid):</p><p className="text-sm">لوحة تحكم زد → الإعدادات → التطبيقات</p></div>
-            <div><p className="font-semibold">Shopify:</p><p className="text-sm">إعدادات المتجر → التطبيقات وإدارة المفاتيح</p></div>
-            <div><p className="font-semibold">ووردبريس (WooCommerce):</p><p className="text-sm">WooCommerce → الإعدادات → متقدم → REST API</p></div>
-          </div>
-        </div>
       </div>
     </div>
   );
