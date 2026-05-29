@@ -4,7 +4,7 @@ import BrandsMarquee from '../components/BrandsMarquee';
 import PublicFooter from '../components/PublicFooter';
 import { supabase } from '../lib/supabaseClient';
 
-// --- أيقونات الأقسام SVG (نفس القديم) ---
+// --- أيقونات الأقسام SVG ---
 function CategoryIcon({ id, className }) {
   const icons = {
     إلكترونيات: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>),
@@ -47,7 +47,7 @@ function AnimatedCounter({ target, suffix = '' }) {
   return <span ref={ref}>+{count.toLocaleString()}{suffix}</span>;
 }
 
-// --- مكون الإطار للجهاز (نفس القديم) ---
+// --- مكون الإطار للجهاز (لشهادات العملاء) ---
 function DeviceFrame({ device, children }) {
   const frames = {
     mobile: (
@@ -90,7 +90,7 @@ function DeviceFrame({ device, children }) {
   return frames[device] || frames.mobile;
 }
 
-// ---------- الصفحة الرئيسية (متكاملة مع Supabase) ----------
+// ---------- الصفحة الرئيسية ----------
 export default function LandingPage({ onNavigate }) {
   const [activeCategory, setActiveCategory] = useState('إلكترونيات');
   const [loading, setLoading] = useState(true);
@@ -98,7 +98,6 @@ export default function LandingPage({ onNavigate }) {
   const [plans, setPlans] = useState([]);
   const [faq, setFaq] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
-  const [banners, setBanners] = useState([]);
   const [siteContent, setSiteContent] = useState({});
   const [categories, setCategories] = useState([]);
   const [productsByCat, setProductsByCat] = useState({});
@@ -107,32 +106,34 @@ export default function LandingPage({ onNavigate }) {
     async function fetchData() {
       setLoading(true);
       try {
+        // 1. الإحصائيات
         const { data: statsData } = await supabase.from('stats').select('*');
-        if (statsData) setStats(statsData);
+        if (statsData && statsData.length) setStats(statsData);
 
+        // 2. الباقات (بدون المجانية)
         const { data: plansData } = await supabase.from('plans').select('*').neq('id', 'free');
-        if (plansData) setPlans(plansData);
+        if (plansData && plansData.length) setPlans(plansData);
 
+        // 3. الأسئلة الشائعة
         const { data: faqData } = await supabase.from('faq').select('*');
-        if (faqData) setFaq(faqData);
+        if (faqData && faqData.length) setFaq(faqData);
 
+        // 4. شهادات العملاء
         const { data: testimonialsData } = await supabase.from('testimonials').select('*');
-        if (testimonialsData) setTestimonials(testimonialsData);
+        if (testimonialsData && testimonialsData.length) setTestimonials(testimonialsData);
 
-        const { data: bannersData } = await supabase.from('banners').select('*').eq('is_visible', true).order('sort_order');
-        if (bannersData) setBanners(bannersData);
-
+        // 5. المحتوى العام
         const { data: siteData } = await supabase.from('site_content').select('*');
         if (siteData) {
-          const contentMap = {};
-          siteData.forEach(item => { contentMap[item.key] = item.value; });
-          setSiteContent(contentMap);
+          const map = {};
+          siteData.forEach(item => { map[item.key] = item.value; });
+          setSiteContent(map);
         }
 
+        // 6. الأقسام
         const { data: catsData } = await supabase.from('categories').select('*').order('count', { ascending: false });
-        if (catsData && catsData.length) {
-          setCategories(catsData);
-        } else {
+        if (catsData && catsData.length) setCategories(catsData);
+        else {
           setCategories([
             { id: 'إلكترونيات', name: 'إلكترونيات', count: 32000 },
             { id: 'أزياء', name: 'أزياء', count: 11250 },
@@ -145,6 +146,7 @@ export default function LandingPage({ onNavigate }) {
           ]);
         }
 
+        // 7. المنتجات (للمعاينة أسفل كل قسم)
         const { data: productsData } = await supabase.from('products').select('*').eq('is_visible', true);
         if (productsData) {
           const grouped = {};
@@ -202,7 +204,7 @@ export default function LandingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* الإحصائيات */}
+      {/* الإحصائيات - تظهر الآن بالتأكيد */}
       {stats.length > 0 && (
         <section className="py-16 bg-gradient-to-r from-purple-600 to-indigo-700 text-white">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 text-center">
@@ -212,13 +214,13 @@ export default function LandingPage({ onNavigate }) {
                   {stat.is_image ? (
                     <img src={stat.icon} alt={stat.label} className="w-12 h-12 object-contain" />
                   ) : (
-                    <span className="w-10 h-10 text-3xl">{stat.icon}</span>
+                    <span className="text-3xl">{stat.icon}</span>
                   )}
                 </div>
                 <div className="text-3xl font-extrabold mb-1">
-                  <AnimatedCounter target={stat.value} suffix={stat.label.startsWith('%') ? '%' : ''} />
+                  <AnimatedCounter target={stat.value} suffix={stat.label?.startsWith('%') ? '%' : ''} />
                 </div>
-                <div className="text-purple-200 text-base">{stat.label.replace('% ', '')}</div>
+                <div className="text-purple-200 text-base">{stat.label?.replace('% ', '')}</div>
               </div>
             ))}
           </div>
@@ -247,12 +249,11 @@ export default function LandingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* منتجاتنا */}
+      {/* منتجاتنا - معاينة لكل قسم */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-4xl font-bold text-gray-900 text-center mb-4">منتجاتنا</h2>
           <p className="text-gray-500 text-center mb-12">تشكيلة واسعة من المنتجات المربحة في انتظارك</p>
-
           <div className="flex overflow-x-auto gap-2 pb-4 mb-10 scrollbar-hide items-center">
             {categories.map((cat) => (
               <button
@@ -269,7 +270,6 @@ export default function LandingPage({ onNavigate }) {
               المزيد ←
             </button>
           </div>
-
           {activeCat && (
             <div className="mb-10">
               <div className="flex items-center justify-between mb-6">
@@ -297,7 +297,6 @@ export default function LandingPage({ onNavigate }) {
               </div>
             </div>
           )}
-
           <div className="text-center">
             <button onClick={() => onNavigate('catalog', activeCategory)} className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-3 rounded-2xl font-bold text-lg shadow-lg hover:bg-purple-700 transition-all transform hover:-translate-y-1">
               اكتشف المزيد من {activeCat?.name} 🚀
@@ -319,10 +318,9 @@ export default function LandingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* براندات */}
       <BrandsMarquee />
 
-      {/* الباقات (بنفس تصميم PricingPage) */}
+      {/* الباقات - بنفس تصميم صفحة الباقات */}
       {plans.length > 0 && (
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-6">
@@ -363,7 +361,7 @@ export default function LandingPage({ onNavigate }) {
         </section>
       )}
 
-      {/* قصص نجاح */}
+      {/* قصص نجاح - شريط متحرك */}
       {testimonials.length > 0 && (
         <section className="py-20 bg-gray-50 overflow-hidden direction-ltr">
           <div className="max-w-7xl mx-auto px-6 mb-12">
@@ -381,10 +379,7 @@ export default function LandingPage({ onNavigate }) {
                   <div className="mt-8 text-center px-2">
                     <div className="text-3xl mb-2 text-purple-300">❝</div>
                     <p className="text-gray-600 text-sm mb-3 line-clamp-4 leading-relaxed">{t.text}</p>
-                    <div>
-                      <div className="font-bold text-gray-800 text-base">{t.name}</div>
-                      <div className="text-sm text-gray-500">{t.role}</div>
-                    </div>
+                    <div><div className="font-bold text-gray-800 text-base">{t.name}</div><div className="text-sm text-gray-500">{t.role}</div></div>
                   </div>
                 </div>
               ))}
