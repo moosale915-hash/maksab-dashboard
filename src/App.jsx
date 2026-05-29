@@ -97,12 +97,21 @@ export default function App() {
     }
     await loadImportList(user.id);
     await fetchUserSubscription(user.id);
-    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
-    setUserName(profile?.full_name || user.email);
+    // جلب اسم المستخدم مع تجاهل الخطأ 406 (إذا لم يجد profile)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle();  // استخدم maybeSingle بدلاً من single
+    if (profileError) {
+      console.warn('لم يتم العثور على profile للمستخدم:', profileError);
+      setUserName(user.email);
+    } else {
+      setUserName(profile?.full_name || user.email);
+    }
     return true;
   };
 
-  // دالة التحقق من الاشتراك (لإجراءات الإضافة فقط)
   const requireSubscription = (actionName) => {
     if (!isLoggedIn) {
       showToast('الرجاء تسجيل الدخول أولاً', 'error');
@@ -115,7 +124,6 @@ export default function App() {
     return true;
   };
 
-  // إضافة منتج إلى قائمة الاستيراد (محظور للمجاني)
   const addToImportList = async (product) => {
     if (!requireSubscription('إضافة منتج إلى قائمة الاستيراد')) return;
     const { data: { user } } = await supabase.auth.getUser();
@@ -127,7 +135,6 @@ export default function App() {
     } else showToast('حدث خطأ أثناء الإضافة', 'error');
   };
 
-  // حذف من قائمة الاستيراد (مسموح للجميع لأنهم يريدون تنظيف القائمة)
   const removeFromImportList = async (productId) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -150,8 +157,6 @@ export default function App() {
       localStorage.setItem('currentPage', 'login');
       return;
     }
-    // إزالة القيود على الصفحات للمستخدم المجاني – الآن يمكنه الوصول لجميع الصفحات
-    // لكن إجراء الإضافة محظور داخل الصفحات عبر دالة requireSubscription
     const adminPages = ['admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
     if (adminPages.includes(page) && !isAdmin) {
       setCurrentPage('dashboard');
@@ -176,7 +181,6 @@ export default function App() {
     }
   };
 
-  // تهيئة التطبيق واستعادة الصفحة (نفس الكود السابق)
   useEffect(() => {
     const init = async () => {
       const savedPage = localStorage.getItem('currentPage');
@@ -189,13 +193,22 @@ export default function App() {
       let targetPage = savedPage && validPages.includes(savedPage) ? savedPage : 'home';
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single();
+        // جلب is_admin مع تجاهل الخطأ
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .maybeSingle();
         const isUserAdmin = profile?.is_admin || false;
         setIsLoggedIn(true);
         setIsAdmin(isUserAdmin);
         await loadImportList(session.user.id);
         await fetchUserSubscription(session.user.id);
-        const { data: profileName } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single();
+        const { data: profileName, error: nameError } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .maybeSingle();
         setUserName(profileName?.full_name || session.user.email);
         if (targetPage === 'login' || targetPage === 'register') {
           targetPage = 'dashboard';
@@ -226,7 +239,6 @@ export default function App() {
     if (currentPage === 'login') return <Login onLogin={handleLogin} onNavigate={navigate} />;
     if (isDashboard && !isLoggedIn) return <Login onLogin={handleLogin} onNavigate={navigate} />;
     if (isDashboard) {
-      // إزالة الحظر على الصفحات للمجاني – الآن يدخلها عادي
       switch (currentPage) {
         case 'dashboard': return <CustomerCatalog addToImportList={addToImportList} removeFromImportList={removeFromImportList} importList={importList} onNavigate={navigate} />;
         case 'products': return <CustomerCatalog addToImportList={addToImportList} removeFromImportList={removeFromImportList} importList={importList} onNavigate={navigate} />;
