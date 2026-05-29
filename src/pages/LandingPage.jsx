@@ -4,19 +4,19 @@ import BrandsMarquee from '../components/BrandsMarquee';
 import PublicFooter from '../components/PublicFooter';
 import { supabase } from '../lib/supabaseClient';
 
-// --- أيقونات الأقسام SVG ---
+// --- أيقونات الأقسام (ثابتة) ---
 function CategoryIcon({ id, className }) {
   const icons = {
-    إلكترونيات: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>),
-    أزياء: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2l3 6h6l-4.5 3.5L18 18l-6-3.5L6 18l1.5-6.5L3 8h6z" /></svg>),
-    منزل: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9,22 9,12 15,12 15,22" /></svg>),
-    تجميل: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="6" r="3" /><path d="M12 9v2m0 2v2m0 2v2" /><rect x="9" y="2" width="6" height="4" rx="1" /></svg>),
-    أطفال: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg>),
-    رياضة: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" /></svg>),
-    مكتب: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>),
-    سيارات: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0z" /><path d="M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0z" /><path d="M5 9l2-4h10l2 4M5 9h14v7a1 1 0 01-1 1H6a1 1 0 01-1-1V9z" /></svg>),
+    إلكترونيات: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>,
+    أزياء: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2l3 6h6l-4.5 3.5L18 18l-6-3.5L6 18l1.5-6.5L3 8h6z" /></svg>,
+    منزل: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9,22 9,12 15,12 15,22" /></svg>,
+    تجميل: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="6" r="3" /><path d="M12 9v2m0 2v2m0 2v2" /><rect x="9" y="2" width="6" height="4" rx="1" /></svg>,
+    أطفال: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg>,
+    رياضة: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" /></svg>,
+    مكتب: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>,
+    سيارات: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0z" /><path d="M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0z" /><path d="M5 9l2-4h10l2 4M5 9h14v7a1 1 0 01-1 1H6a1 1 0 01-1-1V9z" /></svg>,
   };
-  return <span className={`w-10 h-10 inline-block ${className || ''}`}>{icons[id] || (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></svg>)}</span>;
+  return <span className={`w-10 h-10 inline-block ${className || ''}`}>{icons[id] || icons.إلكترونيات}</span>;
 }
 
 // --- عداد متحرك ---
@@ -47,7 +47,7 @@ function AnimatedCounter({ target, suffix = '' }) {
   return <span ref={ref}>+{count.toLocaleString()}{suffix}</span>;
 }
 
-// --- مكون الإطار للجهاز (لشهادات العملاء) ---
+// --- إطار الجهاز (لشهادات العملاء) ---
 function DeviceFrame({ device, children }) {
   const frames = {
     mobile: (
@@ -92,7 +92,6 @@ function DeviceFrame({ device, children }) {
 
 // ---------- الصفحة الرئيسية ----------
 export default function LandingPage({ onNavigate }) {
-  const [activeCategory, setActiveCategory] = useState('إلكترونيات');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -101,28 +100,29 @@ export default function LandingPage({ onNavigate }) {
   const [siteContent, setSiteContent] = useState({});
   const [categories, setCategories] = useState([]);
   const [productsByCat, setProductsByCat] = useState({});
+  const [activeCategory, setActiveCategory] = useState('إلكترونيات');
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchAll() {
       setLoading(true);
       try {
-        // 1. الإحصائيات
+        // 1. stats
         const { data: statsData } = await supabase.from('stats').select('*');
-        if (statsData && statsData.length) setStats(statsData);
+        setStats(statsData || []);
 
-        // 2. الباقات (بدون المجانية)
+        // 2. plans (exclude free)
         const { data: plansData } = await supabase.from('plans').select('*').neq('id', 'free');
-        if (plansData && plansData.length) setPlans(plansData);
+        setPlans(plansData || []);
 
-        // 3. الأسئلة الشائعة
+        // 3. faq
         const { data: faqData } = await supabase.from('faq').select('*');
-        if (faqData && faqData.length) setFaq(faqData);
+        setFaq(faqData || []);
 
-        // 4. شهادات العملاء
+        // 4. testimonials
         const { data: testimonialsData } = await supabase.from('testimonials').select('*');
-        if (testimonialsData && testimonialsData.length) setTestimonials(testimonialsData);
+        setTestimonials(testimonialsData || []);
 
-        // 5. المحتوى العام
+        // 5. site_content
         const { data: siteData } = await supabase.from('site_content').select('*');
         if (siteData) {
           const map = {};
@@ -130,10 +130,12 @@ export default function LandingPage({ onNavigate }) {
           setSiteContent(map);
         }
 
-        // 6. الأقسام
+        // 6. categories
         const { data: catsData } = await supabase.from('categories').select('*').order('count', { ascending: false });
-        if (catsData && catsData.length) setCategories(catsData);
-        else {
+        if (catsData && catsData.length) {
+          setCategories(catsData);
+        } else {
+          // fallback if no categories in DB
           setCategories([
             { id: 'إلكترونيات', name: 'إلكترونيات', count: 32000 },
             { id: 'أزياء', name: 'أزياء', count: 11250 },
@@ -146,9 +148,9 @@ export default function LandingPage({ onNavigate }) {
           ]);
         }
 
-        // 7. المنتجات (للمعاينة أسفل كل قسم)
+        // 7. products for preview (first 3 per category)
         const { data: productsData } = await supabase.from('products').select('*').eq('is_visible', true);
-        if (productsData) {
+        if (productsData && productsData.length) {
           const grouped = {};
           productsData.forEach(p => {
             const cat = p.category_id;
@@ -156,15 +158,21 @@ export default function LandingPage({ onNavigate }) {
             if (grouped[cat].length < 3) grouped[cat].push(p);
           });
           setProductsByCat(grouped);
+        } else {
+          // fallback empty
+          setProductsByCat({});
         }
       } catch (err) {
-        console.error('خطأ في جلب بيانات الصفحة الرئيسية:', err);
+        console.error('خطأ في جلب البيانات:', err);
       } finally {
         setLoading(false);
       }
     }
-    fetchData();
+    fetchAll();
   }, []);
+
+  const activeCat = categories.find(c => c.id === activeCategory);
+  const currentProducts = productsByCat[activeCategory] || [];
 
   if (loading) {
     return (
@@ -174,12 +182,9 @@ export default function LandingPage({ onNavigate }) {
     );
   }
 
-  const activeCat = categories.find(c => c.id === activeCategory);
-  const currentProducts = productsByCat[activeCategory] || [];
-
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-purple-50 via-white to-blue-50 py-20 md:py-32 overflow-hidden">
         <div className="absolute top-0 left-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
@@ -204,30 +209,34 @@ export default function LandingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* الإحصائيات - تظهر الآن بالتأكيد */}
-      {stats.length > 0 && (
-        <section className="py-16 bg-gradient-to-r from-purple-600 to-indigo-700 text-white">
-          <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 text-center">
-            {stats.map((stat, i) => (
-              <div key={i} className="p-4 flex flex-col items-center">
-                <div className="mb-4">
-                  {stat.is_image ? (
-                    <img src={stat.icon} alt={stat.label} className="w-12 h-12 object-contain" />
-                  ) : (
-                    <span className="text-3xl">{stat.icon}</span>
-                  )}
+      {/* Stats Section - تظهر دائماً (حتى لو كانت فارغة تظهر رسالة) */}
+      <section className="py-16 bg-gradient-to-r from-purple-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          {stats.length === 0 ? (
+            <div className="text-center text-purple-200">جاري تحميل الإحصائيات...</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 text-center">
+              {stats.map((stat, i) => (
+                <div key={i} className="p-4 flex flex-col items-center">
+                  <div className="mb-4">
+                    {stat.is_image ? (
+                      <img src={stat.icon} alt={stat.label} className="w-12 h-12 object-contain" />
+                    ) : (
+                      <span className="text-3xl">{stat.icon}</span>
+                    )}
+                  </div>
+                  <div className="text-3xl font-extrabold mb-1">
+                    <AnimatedCounter target={stat.value} suffix={stat.label?.startsWith('%') ? '%' : ''} />
+                  </div>
+                  <div className="text-purple-200 text-base">{stat.label?.replace('% ', '')}</div>
                 </div>
-                <div className="text-3xl font-extrabold mb-1">
-                  <AnimatedCounter target={stat.value} suffix={stat.label?.startsWith('%') ? '%' : ''} />
-                </div>
-                <div className="text-purple-200 text-base">{stat.label?.replace('% ', '')}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
-      {/* كيف تبدأ (ثابت) */}
+      {/* How it works (static) */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-4xl font-bold text-gray-900 text-center mb-16">ابدأ تجارتك بثلاث خطوات بسيطة</h2>
@@ -249,11 +258,12 @@ export default function LandingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* منتجاتنا - معاينة لكل قسم */}
+      {/* Products section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-4xl font-bold text-gray-900 text-center mb-4">منتجاتنا</h2>
           <p className="text-gray-500 text-center mb-12">تشكيلة واسعة من المنتجات المربحة في انتظارك</p>
+
           <div className="flex overflow-x-auto gap-2 pb-4 mb-10 scrollbar-hide items-center">
             {categories.map((cat) => (
               <button
@@ -270,6 +280,7 @@ export default function LandingPage({ onNavigate }) {
               المزيد ←
             </button>
           </div>
+
           {activeCat && (
             <div className="mb-10">
               <div className="flex items-center justify-between mb-6">
@@ -277,26 +288,31 @@ export default function LandingPage({ onNavigate }) {
                 <span className="text-xl font-extrabold text-purple-600">+{activeCat.count?.toLocaleString() || 0}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {currentProducts.slice(0, 4).map((product) => (
-                  <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-                    <div className="h-52 bg-gray-50 flex items-center justify-center p-4">
-                      <img src={product.image_url || `https://picsum.photos/400/400?random=${product.id}`} alt={product.name} className="max-h-full max-w-full object-contain" />
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-semibold text-gray-800 mb-1">{product.name}</h4>
-                      <div className="flex items-center gap-1 text-yellow-500 text-sm mb-2">
-                        {'★'.repeat(Math.floor(product.rating || 0))}{'☆'.repeat(5 - Math.floor(product.rating || 0))}
-                        <span className="text-gray-400 text-xs">({product.reviews || 0})</span>
+                {currentProducts.length > 0 ? (
+                  currentProducts.slice(0, 4).map((product) => (
+                    <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
+                      <div className="h-52 bg-gray-50 flex items-center justify-center p-4">
+                        <img src={product.image_url || `https://picsum.photos/400/400?random=${product.id}`} alt={product.name} className="max-h-full max-w-full object-contain" />
                       </div>
-                      <button onClick={() => onNavigate('login')} className="mt-3 w-full py-2.5 rounded-xl font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors">
-                        تعرف على المواصفات
-                      </button>
+                      <div className="p-4">
+                        <h4 className="font-semibold text-gray-800 mb-1">{product.name}</h4>
+                        <div className="flex items-center gap-1 text-yellow-500 text-sm mb-2">
+                          {'★'.repeat(Math.floor(product.rating || 0))}{'☆'.repeat(5 - Math.floor(product.rating || 0))}
+                          <span className="text-gray-400 text-xs">({product.reviews || 0})</span>
+                        </div>
+                        <button onClick={() => onNavigate('login')} className="mt-3 w-full py-2.5 rounded-xl font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors">
+                          تعرف على المواصفات
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="col-span-4 text-center text-gray-500 py-10">لا توجد منتجات في هذا القسم حالياً</div>
+                )}
               </div>
             </div>
           )}
+
           <div className="text-center">
             <button onClick={() => onNavigate('catalog', activeCategory)} className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-3 rounded-2xl font-bold text-lg shadow-lg hover:bg-purple-700 transition-all transform hover:-translate-y-1">
               اكتشف المزيد من {activeCat?.name} 🚀
@@ -320,7 +336,7 @@ export default function LandingPage({ onNavigate }) {
 
       <BrandsMarquee />
 
-      {/* الباقات - بنفس تصميم صفحة الباقات */}
+      {/* Plans section - same design as pricing page */}
       {plans.length > 0 && (
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-6">
@@ -348,10 +364,7 @@ export default function LandingPage({ onNavigate }) {
                       </li>
                     ))}
                   </ul>
-                  <button
-                    onClick={() => onNavigate('login')}
-                    className={`w-full py-3 rounded-xl font-bold text-lg transition-all ${plan.popular ? 'bg-purple-600 text-white hover:bg-purple-700' : 'border-2 border-purple-600 text-purple-600 hover:bg-purple-50'}`}
-                  >
+                  <button onClick={() => onNavigate('login')} className={`w-full py-3 rounded-xl font-bold text-lg transition-all ${plan.popular ? 'bg-purple-600 text-white hover:bg-purple-700' : 'border-2 border-purple-600 text-purple-600 hover:bg-purple-50'}`}>
                     ابدأ الآن
                   </button>
                 </div>
@@ -361,7 +374,7 @@ export default function LandingPage({ onNavigate }) {
         </section>
       )}
 
-      {/* قصص نجاح - شريط متحرك */}
+      {/* Testimonials marquee */}
       {testimonials.length > 0 && (
         <section className="py-20 bg-gray-50 overflow-hidden direction-ltr">
           <div className="max-w-7xl mx-auto px-6 mb-12">
@@ -404,7 +417,7 @@ export default function LandingPage({ onNavigate }) {
         </section>
       )}
 
-      {/* الأسئلة الشائعة */}
+      {/* FAQ */}
       {faq.length > 0 && (
         <section className="py-20 bg-white">
           <div className="max-w-3xl mx-auto px-6">
