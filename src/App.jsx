@@ -2,24 +2,31 @@ import { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import PublicHeader from './components/PublicHeader';
-import Dashboard from './pages/Dashboard';
-import CustomerDashboard from './pages/CustomerDashboard';
 import CustomerCatalog from './pages/CustomerCatalog';
-import Products from './pages/Products';
+import CustomerDashboard from './pages/CustomerDashboard';
 import ImportList from './pages/ImportList';
 import Orders from './pages/Orders';
 import LandingPage from './pages/LandingPage';
 import PublicCatalog from './pages/PublicCatalog';
 import Login from './pages/Login';
-import AboutUs from './pages/AboutUs';
-import ContactUs from './pages/ContactUs';
-import HowItWorks from './pages/HowItWorks';
+import RegisterPage from './pages/RegisterPage';
 import PricingPage from './pages/PricingPage';
 import ServicesPage from './pages/ServicesPage';
 import SupportPage from './pages/SupportPage';
 import ShippingPage from './pages/ShippingPage';
 import IntegrationsPage from './pages/IntegrationsPage';
-import RegisterPage from './pages/RegisterPage';
+import HowItWorks from './pages/HowItWorks';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import Settings from './pages/Settings';
+import Shipments from './pages/Shipments';
+import MyProducts from './pages/MyProducts';
+import SubscriptionManagement from './pages/SubscriptionManagement';
+import Wallet from './pages/Wallet';
+import SupportTickets from './pages/SupportTickets';
+import Payment from './pages/Payment';
+import Integrations from './pages/Integrations';
+// Admin pages
 import AdminDashboard from './pages/AdminDashboard';
 import AdminProducts from './pages/AdminProducts';
 import AdminCategories from './pages/AdminCategories';
@@ -29,14 +36,6 @@ import AdminPlans from './pages/AdminPlans';
 import AdminFaq from './pages/AdminFaq';
 import AdminContent from './pages/AdminContent';
 import AdminBanners from './pages/AdminBanners';
-import Settings from './pages/Settings';
-import Shipments from './pages/Shipments';
-import MyProducts from './pages/MyProducts';
-import SubscriptionManagement from './pages/SubscriptionManagement';
-import Wallet from './pages/Wallet';
-import SupportTickets from './pages/SupportTickets';
-import Payment from './pages/Payment';
-import Integrations from './pages/Integrations';
 import { supabase } from './lib/supabaseClient';
 
 export default function App() {
@@ -50,25 +49,38 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isInitialized, setIsInitialized] = useState(false);
-  const isLoggingIn = useRef(false); // منع التكرار أثناء تسجيل الدخول
+  const loginInProgress = useRef(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
+  // دالة لجلب بيانات المستخدم (الاشتراك، الاسم، قائمة الاستيراد)
+  const fetchUserData = async (userId) => {
+    await loadImportList(userId);
+    await fetchUserSubscription(userId);
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', userId).maybeSingle();
+    setUserName(profile?.full_name || '');
+  };
+
   const fetchUserSubscription = async (userId) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1);
-    if (data && data.length > 0) {
-      setUserSubscription(data[0]);
-    } else {
-      setUserSubscription({ plan_id: 'free', plan_name: 'مجاني' });
-    }
+    setUserSubscription(data?.[0] || { plan_id: 'free', plan_name: 'مجاني' });
+  };
+
+  const loadImportList = async (userId) => {
+    const { data } = await supabase.from('import_lists').select('product_id').eq('user_id', userId);
+    if (data?.length) {
+      const productIds = data.map(item => item.product_id);
+      const { data: products } = await supabase.from('products').select('*').in('id', productIds);
+      setImportList(products || []);
+    } else setImportList([]);
   };
 
   const refreshUserSubscription = async () => {
@@ -76,40 +88,19 @@ export default function App() {
     if (user) await fetchUserSubscription(user.id);
   };
 
-  const loadImportList = async (userId) => {
-    const { data } = await supabase.from('import_lists').select('product_id').eq('user_id', userId);
-    if (data) {
-      const productIds = data.map(item => item.product_id);
-      if (productIds.length > 0) {
-        const { data: products } = await supabase.from('products').select('*').in('id', productIds);
-        setImportList(products || []);
-      } else setImportList([]);
-    }
-  };
-
-  const performLogin = async (admin = false, preservePage = false) => {
+  // تسجيل الدخول (يُستدعى من Login.jsx)
+  const handleLogin = async (admin = false) => {
+    if (loginInProgress.current) return;
+    loginInProgress.current = true;
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-    setIsLoggedIn(true);
-    setIsAdmin(admin);
-    if (!preservePage) {
+    if (user) {
+      setIsLoggedIn(true);
+      setIsAdmin(admin);
+      await fetchUserData(user.id);
       setCurrentPage('dashboard');
       localStorage.setItem('currentPage', 'dashboard');
     }
-    await loadImportList(user.id);
-    await fetchUserSubscription(user.id);
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (profileError) {
-      console.warn('لم يتم العثور على profile للمستخدم:', profileError);
-      setUserName(user.email);
-    } else {
-      setUserName(profile?.full_name || user.email);
-    }
-    return true;
+    loginInProgress.current = false;
   };
 
   const requireSubscription = (actionName) => {
@@ -118,50 +109,40 @@ export default function App() {
       return false;
     }
     if (userSubscription?.plan_id === 'free') {
-      showToast(`❌ هذه الميزة (${actionName}) تتطلب الاشتراك في إحدى الباقات المدفوعة. يرجى الترقية من صفحة الاشتراكات.`, 'error');
+      showToast(`❌ هذه الميزة (${actionName}) تتطلب الاشتراك في باقة مدفوعة.`, 'error');
       return false;
     }
     return true;
   };
 
   const addToImportList = async (product) => {
-    if (!requireSubscription('إضافة منتج إلى قائمة الاستيراد')) return;
+    if (!requireSubscription('إضافة منتج')) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from('import_lists').insert({ user_id: user.id, product_id: product.id });
     if (!error || error.code === '23505') {
-      setImportList(prev => prev.find(item => item.id === product.id) ? prev : [...prev, product]);
-      showToast('تمت إضافة المنتج إلى قائمة الاستيراد', 'success');
-    } else showToast('حدث خطأ أثناء الإضافة', 'error');
+      setImportList(prev => prev.find(p => p.id === product.id) ? prev : [...prev, product]);
+      showToast('تمت الإضافة', 'success');
+    } else showToast('خطأ في الإضافة', 'error');
   };
 
   const removeFromImportList = async (productId) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from('import_lists').delete().eq('user_id', user.id).eq('product_id', productId);
-    setImportList(prev => prev.filter(item => item.id !== productId));
-    showToast('تم حذف المنتج من القائمة', 'success');
+    setImportList(prev => prev.filter(p => p.id !== productId));
+    showToast('تم الحذف', 'success');
   };
 
   const navigate = (page, data = null) => {
     if (page === 'login' && data?.returnTo) localStorage.setItem('returnTo', data.returnTo);
-    const dashboardPages = [
-      'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products',
-      'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations',
-      'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials',
-      'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'
-    ];
-    if (dashboardPages.includes(page) && !isLoggedIn && page !== 'payment') {
+    const protectedPages = ['dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations', 'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
+    if (protectedPages.includes(page) && !isLoggedIn && page !== 'payment') {
       setCurrentPage('login');
-      setPageData(null);
-      localStorage.setItem('currentPage', 'login');
       return;
     }
-    const adminPages = ['admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
-    if (adminPages.includes(page) && !isAdmin) {
+    if (page.startsWith('admin-') && !isAdmin) {
       setCurrentPage('dashboard');
-      setPageData(null);
-      localStorage.setItem('currentPage', 'dashboard');
       return;
     }
     setCurrentPage(page);
@@ -170,70 +151,34 @@ export default function App() {
     if (page === 'catalog') setCatalogCategory(data || 'الكل');
   };
 
-  const handleLogin = async (admin = false) => {
-    if (isLoggingIn.current) return; // منع التكرار
-    isLoggingIn.current = true;
-    const returnTo = localStorage.getItem('returnTo');
-    localStorage.removeItem('returnTo');
-    const success = await performLogin(admin, false);
-    if (success && returnTo && returnTo !== 'login' && returnTo !== 'register') {
-      navigate(returnTo);
-    } else if (success) {
-      navigate('dashboard');
-    }
-    isLoggingIn.current = false;
-  };
-
+  // تهيئة التطبيق: التحقق من الجلسة واستعادة الصفحة
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     const init = async () => {
       const savedPage = localStorage.getItem('currentPage');
-      const validPages = [
-        'home', 'catalog', 'pricing', 'services', 'support', 'shipping', 'integrations', 'how', 'about', 'contact', 'register', 'login',
-        'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats',
-        'subscription', 'wallet', 'support-tickets', 'payment', 'integrations',
-        'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'
-      ];
+      const validPages = ['home', 'catalog', 'pricing', 'services', 'support', 'shipping', 'integrations', 'how', 'about', 'contact', 'register', 'login', 'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations', 'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
       let targetPage = savedPage && validPages.includes(savedPage) ? savedPage : 'home';
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // إذا كان هناك جلسة نشطة، قم بتسجيل الدخول تلقائياً
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .maybeSingle();
+        const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).maybeSingle();
         const isUserAdmin = profile?.is_admin || false;
-        if (isMounted) {
+        if (mounted) {
           setIsLoggedIn(true);
           setIsAdmin(isUserAdmin);
-          await loadImportList(session.user.id);
-          await fetchUserSubscription(session.user.id);
-          const { data: profileName } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          setUserName(profileName?.full_name || session.user.email);
-          if (targetPage === 'login' || targetPage === 'register') {
-            targetPage = 'dashboard';
-            localStorage.setItem('currentPage', 'dashboard');
-          }
+          await fetchUserData(session.user.id);
+          if (targetPage === 'login' || targetPage === 'register') targetPage = 'dashboard';
         }
       } else {
         const protectedPages = ['dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations', 'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
-        if (protectedPages.includes(targetPage)) {
-          targetPage = 'home';
-          localStorage.setItem('currentPage', 'home');
-        }
+        if (protectedPages.includes(targetPage)) targetPage = 'home';
       }
-      if (isMounted) {
+      if (mounted) {
         setCurrentPage(targetPage);
         setIsInitialized(true);
       }
     };
     init();
-    return () => { isMounted = false; };
+    return () => { mounted = false; };
   }, []);
 
   const isDashboard = [
@@ -273,21 +218,20 @@ export default function App() {
         case 'admin-banners': return <AdminBanners />;
         default: return <CustomerCatalog addToImportList={addToImportList} removeFromImportList={removeFromImportList} importList={importList} onNavigate={navigate} />;
       }
-    } else {
-      switch (currentPage) {
-        case 'home': return <LandingPage onNavigate={navigate} />;
-        case 'catalog': return <PublicCatalog selectedCategory={catalogCategory} onNavigate={navigate} />;
-        case 'pricing': return <PricingPage onNavigate={navigate} isLoggedIn={isLoggedIn} />;
-        case 'services': return <ServicesPage onNavigate={navigate} />;
-        case 'support': return <SupportPage onNavigate={navigate} />;
-        case 'shipping': return <ShippingPage onNavigate={navigate} />;
-        case 'integrations': return <IntegrationsPage onNavigate={navigate} />;
-        case 'how': return <HowItWorks onNavigate={navigate} />;
-        case 'about': return <AboutUs onNavigate={navigate} />;
-        case 'contact': return <ContactUs onNavigate={navigate} />;
-        case 'register': return <RegisterPage onNavigate={navigate} onLogin={handleLogin} />;
-        default: return <LandingPage onNavigate={navigate} />;
-      }
+    }
+    switch (currentPage) {
+      case 'home': return <LandingPage onNavigate={navigate} />;
+      case 'catalog': return <PublicCatalog selectedCategory={catalogCategory} onNavigate={navigate} />;
+      case 'pricing': return <PricingPage onNavigate={navigate} isLoggedIn={isLoggedIn} />;
+      case 'services': return <ServicesPage onNavigate={navigate} />;
+      case 'support': return <SupportPage onNavigate={navigate} />;
+      case 'shipping': return <ShippingPage onNavigate={navigate} />;
+      case 'integrations': return <IntegrationsPage onNavigate={navigate} />;
+      case 'how': return <HowItWorks onNavigate={navigate} />;
+      case 'about': return <AboutUs onNavigate={navigate} />;
+      case 'contact': return <ContactUs onNavigate={navigate} />;
+      case 'register': return <RegisterPage onNavigate={navigate} onLogin={handleLogin} />;
+      default: return <LandingPage onNavigate={navigate} />;
     }
   };
 
