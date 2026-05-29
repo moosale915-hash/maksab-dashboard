@@ -48,8 +48,8 @@ export default function Sidebar({ currentPage, onNavigate, importCount, isAdmin,
         <ul className="space-y-1">
           {regularMenuItems.map((item) => {
             const isActive = currentPage === item.id;
-            // معالجة العناصر التي تحتوي على قوائم فرعية (مثل الطلبات والمنتجات)
-            if (item.id === 'orders' || item.id === 'products') {
+            // معالجة العناصر التي تحتوي على قوائم فرعية (الطلبات فقط كمثال، لكن يمكن إضافة المنتجات لاحقاً)
+            if (item.id === 'orders') {
               const isOpen = openSubMenus[item.id] || false;
               return (
                 <li key={item.id}>
@@ -59,19 +59,28 @@ export default function Sidebar({ currentPage, onNavigate, importCount, isAdmin,
                       isActive ? 'bg-purple-50 text-purple-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    {/* تم تبديل الترتيب: النص أولاً ثم السهم (ليظهر السهم على اليسار في RTL) */}
                     <span className="flex items-center gap-3">
                       <span className="text-xl">{item.icon}</span>
                       <span>{item.label}</span>
                     </span>
-                    <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   {isOpen && (
-                    <div className="mr-8 mt-2 space-y-1">
-                      <button onClick={() => onNavigate(item.id)} className="w-full text-right px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50">كل الطلبات</button>
-                      <button onClick={() => onNavigate(item.id)} className="w-full text-right px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50">الطلبات الجديدة</button>
+                    <div className="mt-2 mr-6 bg-gray-50 rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                      <button
+                        onClick={() => onNavigate(item.id)}
+                        className="w-full text-right px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-600 transition-colors border-b border-gray-100 last:border-0"
+                      >
+                        كل الطلبات
+                      </button>
+                      <button
+                        onClick={() => onNavigate(item.id)}
+                        className="w-full text-right px-4 py-2.5 text-sm text-gray-600 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                      >
+                        الطلبات الجديدة
+                      </button>
                     </div>
                   )}
                 </li>
@@ -122,8 +131,6 @@ export default function Sidebar({ currentPage, onNavigate, importCount, isAdmin,
           </div>
         )}
       </nav>
-
-      {/* تم إزالة أزرار العودة للمتجر وتسجيل الخروج من هنا */}
     </aside>
   );
 }
