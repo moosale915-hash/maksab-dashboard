@@ -37,7 +37,7 @@ export default function Orders() {
       String(order.id).includes(searchTerm) ||
       items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchStatus = statusFilter === 'الكل' || order.status === statusFilter;
-    const matchPayment = paymentFilter === 'الكل' || true; // يمكن إضافة حقل payment_method لاحقاً
+    const matchPayment = paymentFilter === 'الكل' || true;
     return matchSearch && matchStatus && matchPayment;
   });
 
@@ -196,13 +196,13 @@ export default function Orders() {
         )}
       </div>
 
-      {/* ترقيم الصفحات (Pagination) */}
+      {/* ترقيم الصفحات (Pagination) - الأزرار معكوسة لتناسب RTL */}
       <div className="flex justify-center items-center gap-2 mt-6">
-        <button className="px-3 py-1 rounded-lg bg-white border text-sm hover:bg-gray-50">السابق</button>
+        <button className="px-3 py-1 rounded-lg bg-white border text-sm hover:bg-gray-50">التالي</button>
         <button className="px-3 py-1 rounded-lg bg-purple-600 text-white text-sm">1</button>
         <button className="px-3 py-1 rounded-lg bg-white border text-sm hover:bg-gray-50">2</button>
         <button className="px-3 py-1 rounded-lg bg-white border text-sm hover:bg-gray-50">3</button>
-        <button className="px-3 py-1 rounded-lg bg-white border text-sm hover:bg-gray-50">التالي</button>
+        <button className="px-3 py-1 rounded-lg bg-white border text-sm hover:bg-gray-50">السابق</button>
       </div>
     </div>
   );

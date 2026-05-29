@@ -60,7 +60,6 @@ export default function App() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
-  // جلب اشتراك المستخدم الحالي
   const fetchUserSubscription = async (userId) => {
     const { data, error } = await supabase
       .from('user_subscriptions')
@@ -165,7 +164,6 @@ export default function App() {
   };
 
   const navigate = (page, data = null) => {
-    // إذا كانت الصفحة هي login وتم تمرير returnTo، نحفظه في localStorage
     if (page === 'login' && data?.returnTo) {
       localStorage.setItem('returnTo', data.returnTo);
     }
@@ -383,7 +381,7 @@ export default function App() {
       </div>
 
       {toast.show && (
-        <div className={`fixed bottom-8 right-8 z-50 px-6 py-3 rounded-xl shadow-lg text-white font-medium animate-slide-up ${
+        <div className={`fixed top-8 right-8 z-50 px-6 py-3 rounded-xl shadow-lg text-white font-medium animate-slide-up ${
           toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
         }`}>
           {toast.message}
