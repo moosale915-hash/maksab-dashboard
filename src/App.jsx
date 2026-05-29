@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import PublicHeader from './components/PublicHeader';
@@ -387,6 +388,7 @@ export default function App() {
           {toast.message}
         </div>
       )}
+      <SpeedInsights />
     </div>
   );
 }
