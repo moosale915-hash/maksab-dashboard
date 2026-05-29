@@ -3,7 +3,7 @@ import { APP_NAME } from '../config';
 
 const regularMenuItems = [
   { id: 'dashboard', label: 'المنتجات', icon: '📦' },
-  { id: 'subscription', label: 'خطة الاشتراك', icon: '🌟' },  // تم التعديل: رفع الترتيب وتغيير الاسم
+  { id: 'subscription', label: 'خطة الاشتراك', icon: '🌟' },
   { id: 'importList', label: 'قائمة الاستيراد', icon: '📥' },
   { id: 'orders', label: 'الطلبات', icon: '📋' },
   { id: 'shipments', label: 'الشحنات', icon: '🚚' },
@@ -48,6 +48,7 @@ export default function Sidebar({ currentPage, onNavigate, importCount, isAdmin,
         <ul className="space-y-1">
           {regularMenuItems.map((item) => {
             const isActive = currentPage === item.id;
+            // معالجة العناصر التي تحتوي على قوائم فرعية (مثل الطلبات والمنتجات)
             if (item.id === 'orders' || item.id === 'products') {
               const isOpen = openSubMenus[item.id] || false;
               return (
@@ -58,11 +59,14 @@ export default function Sidebar({ currentPage, onNavigate, importCount, isAdmin,
                       isActive ? 'bg-purple-50 text-purple-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    {/* تم تبديل الترتيب: النص أولاً ثم السهم (ليظهر السهم على اليسار في RTL) */}
                     <span className="flex items-center gap-3">
                       <span className="text-xl">{item.icon}</span>
                       <span>{item.label}</span>
                     </span>
+                    <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
                   {isOpen && (
                     <div className="mr-8 mt-2 space-y-1">
@@ -119,7 +123,7 @@ export default function Sidebar({ currentPage, onNavigate, importCount, isAdmin,
         )}
       </nav>
 
-      {/* تم إزالة أزرار "العودة للمتجر" و "تسجيل خروج" من هنا */}
+      {/* تم إزالة أزرار العودة للمتجر وتسجيل الخروج من هنا */}
     </aside>
   );
 }
