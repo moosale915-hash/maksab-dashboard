@@ -382,7 +382,7 @@ export default function LandingPage({ onNavigate }) {
             <p className="text-gray-500 text-center">آراء العملاء اللي يعرف {APP_NAME} عمره مايندم</p>
           </div>
           <div className="w-full overflow-hidden">
-            <div className="flex w-max animate-testimonial-marquee pause-on-hover" style={{ animationDuration: '40s' }}>
+            <div className="flex w-max animate-testimonial-marquee pause-on-hover" style={{ animationDuration: '60s' }}>
               {[...testimonials, ...testimonials, ...testimonials, ...testimonials].map((t, i) => (
                 <div key={i} className="flex-shrink-0 flex flex-col items-center px-2 w-80">
                   <DeviceFrame device={t.device}>
