@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { APP_NAME } from '../config';
 
@@ -7,20 +7,9 @@ export default function Login({ onLogin, onNavigate }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [returnTo, setReturnTo] = useState(null);
-
-  // عند تحميل الصفحة، نتحقق من وجود returnTo في localStorage أو في URL
-  useEffect(() => {
-    // محاولة قراءة returnTo من localStorage (يمكن تخزينها عند التوجيه إلى login)
-    const storedReturn = localStorage.getItem('returnTo');
-    if (storedReturn) {
-      setReturnTo(storedReturn);
-      localStorage.removeItem('returnTo');
-    }
-  }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // مهم جداً لمنع إعادة تحميل الصفحة
     setError('');
     setLoading(true);
     
@@ -36,23 +25,18 @@ export default function Login({ onLogin, onNavigate }) {
         return;
       }
 
-      // التحقق مما إذا كان المستخدم مسؤولاً
+      // الحصول على صلاحيات الأدمن
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle(); // استخدم maybeSingle لتجنب الخطأ 406
 
-      // تسجيل الدخول في التطبيق
       onLogin(profile?.is_admin || false);
-
-      // إذا كان هناك صفحة عودة (returnTo)، نذهب إليها
-      if (returnTo) {
-        onNavigate(returnTo);
-      }
-      // وإلا نذهب إلى لوحة التحكم (كما كان سابقاً)
-      // لاحظ أن onLogin يقوم بتعيين currentPage = 'dashboard'، لذا لا داعي لتغييرها هنا
-    } finally {
+      // لا تضع navigate هنا لأن onLogin ستقوم بذلك (راجع App.jsx)
+    } catch (err) {
+      console.error(err);
+      setError('حدث خطأ غير متوقع');
       setLoading(false);
     }
   };
@@ -87,11 +71,10 @@ export default function Login({ onLogin, onNavigate }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-md disabled:opacity-50">
             {loading ? 'جاري التحميل...' : 'دخول'}
           </button>
 
-          {/* فاصل */}
           <div className="flex items-center gap-4">
             <div className="flex-1 h-px bg-gray-200"></div>
             <span className="text-sm text-gray-400">أو</span>

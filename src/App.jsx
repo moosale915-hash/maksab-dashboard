@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import PublicHeader from './components/PublicHeader';
@@ -50,6 +50,7 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isInitialized, setIsInitialized] = useState(false);
+  const isLoggingIn = useRef(false); // منع التكرار أثناء تسجيل الدخول
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -97,12 +98,11 @@ export default function App() {
     }
     await loadImportList(user.id);
     await fetchUserSubscription(user.id);
-    // جلب اسم المستخدم مع تجاهل الخطأ 406 (إذا لم يجد profile)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('full_name')
       .eq('id', user.id)
-      .maybeSingle();  // استخدم maybeSingle بدلاً من single
+      .maybeSingle();
     if (profileError) {
       console.warn('لم يتم العثور على profile للمستخدم:', profileError);
       setUserName(user.email);
@@ -171,6 +171,8 @@ export default function App() {
   };
 
   const handleLogin = async (admin = false) => {
+    if (isLoggingIn.current) return; // منع التكرار
+    isLoggingIn.current = true;
     const returnTo = localStorage.getItem('returnTo');
     localStorage.removeItem('returnTo');
     const success = await performLogin(admin, false);
@@ -179,9 +181,11 @@ export default function App() {
     } else if (success) {
       navigate('dashboard');
     }
+    isLoggingIn.current = false;
   };
 
   useEffect(() => {
+    let isMounted = true;
     const init = async () => {
       const savedPage = localStorage.getItem('currentPage');
       const validPages = [
@@ -193,26 +197,28 @@ export default function App() {
       let targetPage = savedPage && validPages.includes(savedPage) ? savedPage : 'home';
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // جلب is_admin مع تجاهل الخطأ
+        // إذا كان هناك جلسة نشطة، قم بتسجيل الدخول تلقائياً
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', session.user.id)
           .maybeSingle();
         const isUserAdmin = profile?.is_admin || false;
-        setIsLoggedIn(true);
-        setIsAdmin(isUserAdmin);
-        await loadImportList(session.user.id);
-        await fetchUserSubscription(session.user.id);
-        const { data: profileName, error: nameError } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        setUserName(profileName?.full_name || session.user.email);
-        if (targetPage === 'login' || targetPage === 'register') {
-          targetPage = 'dashboard';
-          localStorage.setItem('currentPage', 'dashboard');
+        if (isMounted) {
+          setIsLoggedIn(true);
+          setIsAdmin(isUserAdmin);
+          await loadImportList(session.user.id);
+          await fetchUserSubscription(session.user.id);
+          const { data: profileName } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          setUserName(profileName?.full_name || session.user.email);
+          if (targetPage === 'login' || targetPage === 'register') {
+            targetPage = 'dashboard';
+            localStorage.setItem('currentPage', 'dashboard');
+          }
         }
       } else {
         const protectedPages = ['dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations', 'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
@@ -221,10 +227,13 @@ export default function App() {
           localStorage.setItem('currentPage', 'home');
         }
       }
-      setCurrentPage(targetPage);
-      setIsInitialized(true);
+      if (isMounted) {
+        setCurrentPage(targetPage);
+        setIsInitialized(true);
+      }
     };
     init();
+    return () => { isMounted = false; };
   }, []);
 
   const isDashboard = [
