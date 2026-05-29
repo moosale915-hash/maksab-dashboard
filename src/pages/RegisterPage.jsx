@@ -34,17 +34,26 @@ export default function RegisterPage({ onNavigate, onLogin }) {
     }
 
     if (data.user) {
-      // 2. إنشاء الملف الشخصي
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        full_name: name,
-        phone,
-        is_admin: false,
-      });
+      // 2. إدراج الملف الشخصي (profile) بالاسم الكامل
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          full_name: name,
+          phone: phone || null,
+          is_admin: false,
+        });
 
-      // 3. إنشاء اشتراك مجاني (تلقائي)
+      if (profileError) {
+        console.error('خطأ في إدراج profile:', profileError);
+        // حتى إذا فشل الإدراج بسبب RLS، نكمل (يمكن أن يكون profile موجوداً تلقائياً عبر trigger)
+        // ولكن نعطي رسالة تحذيرية للمستخدم.
+        setError('تم إنشاء الحساب ولكن حدث خطأ في حفظ الاسم. يرجى تحديث الاسم من الإعدادات لاحقاً.');
+      }
+
+      // 3. إنشاء اشتراك مجاني تلقائي
       const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1); // صلاحية شهر واحد للنسخة التجريبية (يمكن تغييرها)
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
       await supabase.from('user_subscriptions').insert({
         user_id: data.user.id,
         plan_id: 'free',
@@ -57,7 +66,6 @@ export default function RegisterPage({ onNavigate, onLogin }) {
       });
 
       // 4. تسجيل الدخول مباشرة (بما أن Confirm Email معطل)
-      // نمرر false لأن المستخدم الجديد ليس مسؤولاً
       onLogin(false);
     }
   };
