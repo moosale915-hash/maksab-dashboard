@@ -10,13 +10,25 @@ export default function RegisterPage({ onNavigate, onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // دالة للتحقق من صحة رقم الجوال (أرقام فقط، 10-15 رقم)
+  const isValidPhone = (phone) => {
+    const phoneRegex = /^[0-9]{10,15}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    if (!name || !email || !password) {
-      setError('الاسم، البريد الإلكتروني، وكلمة المرور مطلوبة');
+    if (!name || !email || !phone || !password) {
+      setError('جميع الحقول مطلوبة (الاسم، البريد الإلكتروني، رقم الجوال، كلمة المرور)');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidPhone(phone)) {
+      setError('رقم الجوال غير صحيح. يجب أن يحتوي على أرقام فقط (10-15 رقم)');
       setLoading(false);
       return;
     }
@@ -34,21 +46,19 @@ export default function RegisterPage({ onNavigate, onLogin }) {
     }
 
     if (data.user) {
-      // 2. إدراج الملف الشخصي (profile) بالاسم الكامل
+      // 2. إدراج الملف الشخصي (profile) مع رقم الجوال
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: data.user.id,
           full_name: name,
-          phone: phone || null,
+          phone: phone,
           is_admin: false,
         });
 
       if (profileError) {
         console.error('خطأ في إدراج profile:', profileError);
-        // حتى إذا فشل الإدراج بسبب RLS، نكمل (يمكن أن يكون profile موجوداً تلقائياً عبر trigger)
-        // ولكن نعطي رسالة تحذيرية للمستخدم.
-        setError('تم إنشاء الحساب ولكن حدث خطأ في حفظ الاسم. يرجى تحديث الاسم من الإعدادات لاحقاً.');
+        setError('تم إنشاء الحساب ولكن حدث خطأ في حفظ رقم الجوال. يرجى تحديثه من الإعدادات لاحقاً.');
       }
 
       // 3. إنشاء اشتراك مجاني تلقائي
@@ -65,7 +75,7 @@ export default function RegisterPage({ onNavigate, onLogin }) {
         expires_at: expiresAt,
       });
 
-      // 4. تسجيل الدخول مباشرة (بما أن Confirm Email معطل)
+      // 4. تسجيل الدخول مباشرة
       onLogin(false);
     }
   };
@@ -87,12 +97,13 @@ export default function RegisterPage({ onNavigate, onLogin }) {
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك الكامل" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني (للتسجيل والدخول)</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@mail.com" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجوال (اختياري)</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجوال <span className="text-red-500">* إجباري</span></label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
+            <p className="text-xs text-gray-400 mt-1">أدخل رقم الجوال بدون أصفار البداية أو بـ 0 (مثال: 0501234567 أو 501234567)</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
