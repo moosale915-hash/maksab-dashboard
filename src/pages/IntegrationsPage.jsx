@@ -1,149 +1,277 @@
-import PublicFooter from '../components/PublicFooter';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
-// --- أيقونات SVG للميزات ---
-const features = [
-  {
-    icon: (
-      <svg className="w-12 h-12 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <polyline points="21,15 16,10 5,21" />
-      </svg>
-    ),
-    title: 'صور ووصف المنتجات',
-  },
-  {
-    icon: (
-      <svg className="w-12 h-12 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="16,3 21,3 21,8" />
-        <line x1="4" y1="20" x2="21" y2="3" />
-        <polyline points="21,16 21,21 16,21" />
-        <line x1="15" y1="15" x2="21" y2="21" />
-        <line x1="4" y1="4" x2="9" y2="9" />
-      </svg>
-    ),
-    title: 'ربط الطلبات',
-  },
-  {
-    icon: (
-      <svg className="w-12 h-12 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 18a2 2 0 100-4 2 2 0 000 4z" />
-        <path d="M7 6a2 2 0 100-4 2 2 0 000 4z" />
-        <path d="M17 8l-4 4-4-3" />
-      </svg>
-    ),
-    title: 'تتبع الشحنات',
-  },
-  {
-    icon: (
-      <svg className="w-12 h-12 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
-        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-      </svg>
-    ),
-    title: 'كمية المنتجات',
-  },
-  {
-    icon: (
-      <svg className="w-12 h-12 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23" />
-        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-      </svg>
-    ),
-    title: 'ربط السعر مع هامش الربح',
-  },
-  {
-    icon: (
-      <svg className="w-12 h-12 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12,6 12,12 16,14" />
-      </svg>
-    ),
-    title: 'تتبع الشحنات',
-  },
-];
+export default function Integrations({ onNavigate }) {
+  const [integrations, setIntegrations] = useState({
+    salla: { connected: false, apiKey: '', storeName: '' },
+    zid: { connected: false, apiKey: '', storeName: '' },
+    shopify: { connected: false, apiKey: '', storeName: '' },
+    wordpress: { connected: false, apiKey: '', storeName: '' }
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-export default function IntegrationsPage({ onNavigate }) {
+  // جلب التكاملات المحفوظة من Supabase
+  useEffect(() => {
+    async function fetchIntegrations() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('integrations')
+        .select('platform, api_key, store_name, is_connected')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('خطأ في جلب التكاملات:', error);
+        return;
+      }
+
+      if (data) {
+        const newIntegrations = { ...integrations };
+        data.forEach(item => {
+          if (item.platform === 'salla') {
+            newIntegrations.salla = {
+              connected: item.is_connected,
+              apiKey: item.api_key || '',
+              storeName: item.store_name || ''
+            };
+          } else if (item.platform === 'zid') {
+            newIntegrations.zid = {
+              connected: item.is_connected,
+              apiKey: item.api_key || '',
+              storeName: item.store_name || ''
+            };
+          } else if (item.platform === 'shopify') {
+            newIntegrations.shopify = {
+              connected: item.is_connected,
+              apiKey: item.api_key || '',
+              storeName: item.store_name || ''
+            };
+          } else if (item.platform === 'wordpress') {
+            newIntegrations.wordpress = {
+              connected: item.is_connected,
+              apiKey: item.api_key || '',
+              storeName: item.store_name || ''
+            };
+          }
+        });
+        setIntegrations(newIntegrations);
+      }
+    }
+    fetchIntegrations();
+  }, []);
+
+  const handleIntegrationChange = (platform, field, value) => {
+    setIntegrations(prev => ({
+      ...prev,
+      [platform]: { ...prev[platform], [field]: value }
+    }));
+  };
+
+  const handleConnect = async (platform) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        onNavigate('login');
+        return;
+      }
+
+      const integration = integrations[platform];
+      const apiKey = integration.apiKey?.trim();
+      if (!apiKey) {
+        setError(`يرجى إدخال مفتاح API لمنصة ${platform === 'salla' ? 'سلة' : platform === 'zid' ? 'زد' : platform === 'shopify' ? 'Shopify' : 'ووردبريس'}`);
+        setLoading(false);
+        return;
+      }
+
+      // حفظ أو تحديث بيانات التكامل
+      const { error: upsertError } = await supabase
+        .from('integrations')
+        .upsert({
+          user_id: user.id,
+          platform: platform,
+          api_key: apiKey,
+          store_name: integration.storeName || null,
+          is_connected: true,
+          updated_at: new Date()
+        }, { onConflict: 'user_id,platform' });
+
+      if (upsertError) throw upsertError;
+
+      setIntegrations(prev => ({
+        ...prev,
+        [platform]: { ...prev[platform], connected: true }
+      }));
+
+      const platformName = platform === 'salla' ? 'سلة' : platform === 'zid' ? 'زد' : platform === 'shopify' ? 'Shopify' : 'ووردبريس';
+      setSuccess(`تم الاتصال بـ ${platformName} بنجاح!`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError('فشل الاتصال. يرجى التحقق من بيانات API');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDisconnect = async (platform) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('integrations')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('platform', platform);
+
+      setIntegrations(prev => ({
+        ...prev,
+        [platform]: {
+          ...prev[platform],
+          connected: false,
+          apiKey: '',
+          storeName: ''
+        }
+      }));
+      const platformName = platform === 'salla' ? 'سلة' : platform === 'zid' ? 'زد' : platform === 'shopify' ? 'Shopify' : 'ووردبريس';
+      setSuccess(`تم قطع الاتصال عن ${platformName}`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError('فشل قطع الاتصال');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-
-      {/* Hero Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* النص */}
-            <div>
-              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
-                اربط منتجاتك من مكسب إلى متجرك الإلكتروني مباشرة
-              </h1>
-              <p className="text-xl text-gray-600 mb-8">
-                بخطوات بسيطة تبدأ البيع وتدير تجارتك بسهولة تامة من مكان واحد.
-              </p>
-              <button
-                onClick={() => onNavigate('login')}
-                className="bg-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-purple-700 transition-all shadow-lg"
-              >
-                ابدأ الآن
-              </button>
-            </div>
-            {/* صورة توضيحية */}
-            <div className="flex justify-center">
-              <img
-                src="https://m5azn.com/themes/plus/frontend/images/section/int.png"
-                alt="الربط التقني"
-                className="max-w-full h-auto rounded-2xl shadow-lg"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">التكاملات</h1>
+          <p className="text-xl text-gray-600">ربط متجرك مع المنصات الأخرى</p>
         </div>
-      </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-purple-600 font-bold uppercase tracking-wider text-sm">مميزاتنا</span>
-            <h2 className="text-4xl font-extrabold text-gray-900 mt-4">
-              مكسب تربط لك كل ما تحتاجه لإدارة منتجاتك مع منصات التجارة الإلكترونية
-            </h2>
-          </div>
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">{error}</div>}
+        {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">{success}</div>}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-2 transition-all duration-300"
-              >
-                <div className="flex justify-center mb-6">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold text-gray-800">{feature.title}</h3>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Salla */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div><h3 className="text-2xl font-bold text-gray-900">سلة</h3><p className="text-gray-600 text-sm mt-1">منصة تجارة إلكترونية</p></div>
+              <div className="w-12 h-12">
+                <img src="/images/salla-logo.png" alt="سلة" className="w-full h-full object-contain" />
               </div>
-            ))}
+            </div>
+            {integrations.salla.connected ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-green-700 font-semibold">✅ متصل</p>
+                  <p className="text-green-600 text-sm mt-1">المتجر: {integrations.salla.storeName}</p>
+                </div>
+                <button onClick={() => handleDisconnect('salla')} className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">قطع الاتصال</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <input type="text" placeholder="اسم المتجر" value={integrations.salla.storeName} onChange={(e) => handleIntegrationChange('salla', 'storeName', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <input type="password" placeholder="مفتاح API" value={integrations.salla.apiKey} onChange={(e) => handleIntegrationChange('salla', 'apiKey', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <button onClick={() => handleConnect('salla')} disabled={loading || !integrations.salla.apiKey} className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">ربط الآن</button>
+              </div>
+            )}
+          </div>
+
+          {/* Zid */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div><h3 className="text-2xl font-bold text-gray-900">زد</h3><p className="text-gray-600 text-sm mt-1">منصة تجارة إلكترونية</p></div>
+              <div className="w-12 h-12">
+                <img src="/images/zid-logo.png" alt="زد" className="w-full h-full object-contain" />
+              </div>
+            </div>
+            {integrations.zid.connected ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-green-700 font-semibold">✅ متصل</p>
+                  <p className="text-green-600 text-sm mt-1">المتجر: {integrations.zid.storeName}</p>
+                </div>
+                <button onClick={() => handleDisconnect('zid')} className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">قطع الاتصال</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <input type="text" placeholder="اسم المتجر" value={integrations.zid.storeName} onChange={(e) => handleIntegrationChange('zid', 'storeName', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <input type="password" placeholder="مفتاح API" value={integrations.zid.apiKey} onChange={(e) => handleIntegrationChange('zid', 'apiKey', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <button onClick={() => handleConnect('zid')} disabled={loading || !integrations.zid.apiKey} className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">ربط الآن</button>
+              </div>
+            )}
+          </div>
+
+          {/* Shopify */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div><h3 className="text-2xl font-bold text-gray-900">Shopify</h3><p className="text-gray-600 text-sm mt-1">منصة تجارة إلكترونية عالمية</p></div>
+              <div className="w-12 h-12">
+                <img src="/images/shopify-logo.png" alt="Shopify" className="w-full h-full object-contain" />
+              </div>
+            </div>
+            {integrations.shopify.connected ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-green-700 font-semibold">✅ متصل</p>
+                  <p className="text-green-600 text-sm mt-1">المتجر: {integrations.shopify.storeName}</p>
+                </div>
+                <button onClick={() => handleDisconnect('shopify')} className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">قطع الاتصال</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <input type="text" placeholder="اسم المتجر (مثال: my-store)" value={integrations.shopify.storeName} onChange={(e) => handleIntegrationChange('shopify', 'storeName', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <input type="password" placeholder="مفتاح API" value={integrations.shopify.apiKey} onChange={(e) => handleIntegrationChange('shopify', 'apiKey', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <button onClick={() => handleConnect('shopify')} disabled={loading || !integrations.shopify.apiKey} className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">ربط الآن</button>
+              </div>
+            )}
+          </div>
+
+          {/* WordPress + WooCommerce */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div><h3 className="text-2xl font-bold text-gray-900">ووردبريس</h3><p className="text-gray-600 text-sm mt-1">WooCommerce</p></div>
+              <div className="w-12 h-12">
+                <img src="/images/wordpress-logo.png" alt="ووردبريس" className="w-full h-full object-contain" />
+              </div>
+            </div>
+            {integrations.wordpress.connected ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-green-700 font-semibold">✅ متصل</p>
+                  <p className="text-green-600 text-sm mt-1">الموقع: {integrations.wordpress.storeName}</p>
+                </div>
+                <button onClick={() => handleDisconnect('wordpress')} className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">قطع الاتصال</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <input type="text" placeholder="رابط الموقع (مثال: https://mysite.com)" value={integrations.wordpress.storeName} onChange={(e) => handleIntegrationChange('wordpress', 'storeName', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <input type="password" placeholder="مفتاح Consumer Key" value={integrations.wordpress.apiKey} onChange={(e) => handleIntegrationChange('wordpress', 'apiKey', e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" />
+                <button onClick={() => handleConnect('wordpress')} disabled={loading || !integrations.wordpress.apiKey} className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">ربط الآن</button>
+              </div>
+            )}
           </div>
         </div>
-      </section>
 
-      {/* CTA نهائي */}
-      <section className="py-20 text-center">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-4xl font-extrabold text-gray-900 mb-8">
-            التجارة حلم يتحقق مع مكسب
-          </h2>
-          <button
-            onClick={() => onNavigate('login')}
-            className="bg-purple-600 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-purple-700 transition-all shadow-lg"
-          >
-            ابدأ تجارتك معنا
-          </button>
+        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-8">
+          <h3 className="text-xl font-bold text-blue-900 mb-4">📚 كيفية الحصول على مفاتيح API</h3>
+          <div className="space-y-4 text-blue-800">
+            <div><p className="font-semibold">سلة (Salla):</p><p className="text-sm">اذهب إلى لوحة تحكم سلة → الإعدادات → API → انسخ مفتاح API</p></div>
+            <div><p className="font-semibold">زد (Zid):</p><p className="text-sm">اذهب إلى لوحة تحكم زد → الإعدادات → التطبيقات → أنشئ تطبيق جديد</p></div>
+            <div><p className="font-semibold">Shopify:</p><p className="text-sm">اذهب إلى إعدادات المتجر → التطبيقات وإدارة المفاتيح → إنشاء مفتاح API</p></div>
+            <div><p className="font-semibold">ووردبريس (WooCommerce):</p><p className="text-sm">من لوحة تحكم ووردبريس → WooCommerce → الإعدادات → متقدم → REST API → إنشاء مفتاح</p></div>
+          </div>
         </div>
-      </section>
-
-      {/* تذييل */}
-      <PublicFooter onNavigate={onNavigate} />
+      </div>
     </div>
   );
 }
