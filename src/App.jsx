@@ -48,6 +48,7 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // NEW: حالة القائمة الجانبية للموبايل
   const initDone = useRef(false);
   const loginInProgress = useRef(false);
 
@@ -172,7 +173,6 @@ export default function App() {
   };
 
   const handleLogin = async (admin = false) => {
-    // منع التنفيذ المتكرر أثناء تسجيل الدخول
     if (loginInProgress.current) return;
     loginInProgress.current = true;
     try {
@@ -182,14 +182,11 @@ export default function App() {
       if (success && returnTo && returnTo !== 'login' && returnTo !== 'register') {
         navigate(returnTo);
       }
-      // success بالفعل قام بتعيين currentPage = 'dashboard' في performLogin (عند preservePage=false)
-      // لذلك لا حاجة لاستدعاء navigate مرة أخرى
     } finally {
       loginInProgress.current = false;
     }
   };
 
-  // تهيئة واحدة فقط
   useEffect(() => {
     if (initDone.current) return;
     initDone.current = true;
@@ -206,7 +203,7 @@ export default function App() {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', session.user.id)
@@ -298,11 +295,31 @@ export default function App() {
   return (
     <div className="flex h-screen bg-gray-50" dir="rtl">
       {isDashboard && isLoggedIn && (
-        <Sidebar currentPage={currentPage} onNavigate={navigate} importCount={importList.length} isAdmin={isAdmin} onLogout={() => { setIsLoggedIn(false); setPageData(null); localStorage.removeItem('currentPage'); }} userSubscription={userSubscription} userName={userName} />
+        <Sidebar 
+          currentPage={currentPage} 
+          onNavigate={navigate} 
+          importCount={importList.length} 
+          isAdmin={isAdmin} 
+          onLogout={() => { setIsLoggedIn(false); setPageData(null); localStorage.removeItem('currentPage'); }} 
+          userSubscription={userSubscription} 
+          userName={userName}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
       )}
       <div className="flex-1 flex flex-col overflow-y-auto">
-        {!isDashboard || !isLoggedIn ? <PublicHeader onNavigate={navigate} isLoggedIn={isLoggedIn} /> : <Header userSubscription={userSubscription} userName={userName} onLogout={() => { setIsLoggedIn(false); setPageData(null); localStorage.removeItem('currentPage'); }} onNavigate={navigate} />}
-        <main className={isDashboard ? 'p-6 flex-1 overflow-auto' : ''}>{renderPage()}</main>
+        {!isDashboard || !isLoggedIn ? (
+          <PublicHeader onNavigate={navigate} isLoggedIn={isLoggedIn} />
+        ) : (
+          <Header 
+            userSubscription={userSubscription} 
+            userName={userName} 
+            onLogout={() => { setIsLoggedIn(false); setPageData(null); localStorage.removeItem('currentPage'); }} 
+            onNavigate={navigate}
+            onMenuClick={() => setIsSidebarOpen(true)}
+          />
+        )}
+        <main className={isDashboard ? 'p-4 md:p-6 flex-1 overflow-auto' : ''}>{renderPage()}</main>
       </div>
       {toast.show && <div className={`fixed top-8 right-8 z-50 px-6 py-3 rounded-xl shadow-lg text-white font-medium animate-slide-up ${toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>{toast.message}</div>}
     </div>

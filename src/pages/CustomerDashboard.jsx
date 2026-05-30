@@ -27,7 +27,6 @@ export default function CustomerDashboard({ onNavigate }) {
         return;
       }
 
-      // جلب الطلبات
       const { data: orders } = await supabase
         .from('orders')
         .select('total, items')
@@ -51,7 +50,6 @@ export default function CustomerDashboard({ onNavigate }) {
         newStores: 11,
       });
 
-      // جلب أفضل المنتجات مبيعاً (بناءً على التقييم أو الخصم)
       const { data: products } = await supabase
         .from('products')
         .select('*')
@@ -77,96 +75,96 @@ export default function CustomerDashboard({ onNavigate }) {
   }
 
   return (
-    <div className="h-full bg-gray-50 p-4 md:p-6 space-y-6">
+    <div className="h-full bg-gray-50 p-3 md:p-6 space-y-4 md:space-y-6">
       {/* الترحيب */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">مرحباً،</h1>
-        <p className="text-gray-500 mt-1">إليك ملخص ما يحدث في متجرك اليوم.</p>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800">مرحباً،</h1>
+        <p className="text-sm md:text-base text-gray-500 mt-1">إليك ملخص ما يحدث في متجرك اليوم.</p>
       </div>
 
       {/* بنر ترويجي */}
-      <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-        <h2 className="text-xl font-bold mb-1">عروض خاصة للمشتركين الجدد!</h2>
-        <p className="text-sm opacity-90">استخدم كود "مكسب30" للحصول على خصم 30%</p>
+      <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl p-4 md:p-6 text-white shadow-lg">
+        <h2 className="text-base md:text-xl font-bold mb-1">عروض خاصة للمشتركين الجدد!</h2>
+        <p className="text-xs md:text-sm opacity-90">استخدم كود "مكسب30" للحصول على خصم 30%</p>
       </div>
 
-      {/* أرقام اليوم */}
+      {/* أرقام اليوم - تحسين الشبكة للموبايل */}
       <div>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">أرقام اليوم</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-3">
+        <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-3 md:mb-4">أرقام اليوم</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
+          <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-2 md:mb-3">
               <div>
-                <p className="text-sm text-gray-500">مبيعاتك</p>
-                <p className="text-2xl font-extrabold text-gray-800 mt-1">{formatCurrency(stats.totalSales)}</p>
+                <p className="text-xs md:text-sm text-gray-500">مبيعاتك</p>
+                <p className="text-lg md:text-2xl font-extrabold text-gray-800 mt-1">{formatCurrency(stats.totalSales)}</p>
               </div>
-              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-xl">💰</div>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-xl flex items-center justify-center text-base md:text-xl">💰</div>
             </div>
-            <p className="text-xs text-gray-400">قيمة المبيعات التي حققتها</p>
+            <p className="text-xs text-gray-400">قيمة المبيعات</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-3">
+          <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-2 md:mb-3">
               <div>
-                <p className="text-sm text-gray-500">نسبة الربح</p>
-                <p className="text-2xl font-extrabold text-gray-800 mt-1">{stats.profitRate}</p>
+                <p className="text-xs md:text-sm text-gray-500">نسبة الربح</p>
+                <p className="text-lg md:text-2xl font-extrabold text-gray-800 mt-1">{stats.profitRate}</p>
               </div>
-              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl">📈</div>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-xl flex items-center justify-center text-base md:text-xl">📈</div>
             </div>
-            <p className="text-xs text-gray-400">متوسط نسبة الربح</p>
+            <p className="text-xs text-gray-400">متوسط الربح</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-3">
+          <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-2 md:mb-3">
               <div>
-                <p className="text-sm text-gray-500">إجمالي الطلبات</p>
-                <p className="text-2xl font-extrabold text-gray-800 mt-1">{stats.totalOrders}</p>
+                <p className="text-xs md:text-sm text-gray-500">إجمالي الطلبات</p>
+                <p className="text-lg md:text-2xl font-extrabold text-gray-800 mt-1">{stats.totalOrders}</p>
               </div>
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-xl">📦</div>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-xl flex items-center justify-center text-base md:text-xl">📦</div>
             </div>
-            <p className="text-xs text-gray-400">عدد الطلبات المنفذة</p>
+            <p className="text-xs text-gray-400">عدد الطلبات</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-3">
+          <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-2 md:mb-3">
               <div>
-                <p className="text-sm text-gray-500">المنتجات المباعة</p>
-                <p className="text-2xl font-extrabold text-gray-800 mt-1">{stats.productsSold}</p>
+                <p className="text-xs md:text-sm text-gray-500">المنتجات المباعة</p>
+                <p className="text-lg md:text-2xl font-extrabold text-gray-800 mt-1">{stats.productsSold}</p>
               </div>
-              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl">🏷️</div>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 rounded-xl flex items-center justify-center text-base md:text-xl">🏷️</div>
             </div>
-            <p className="text-xs text-gray-400">منتجات تم بيعها</p>
+            <p className="text-xs text-gray-400">منتجات مباعة</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-3">
+          <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-2 md:mb-3">
               <div>
-                <p className="text-sm text-gray-500">متاجر جديدة</p>
-                <p className="text-2xl font-extrabold text-gray-800 mt-1">{stats.newStores}</p>
+                <p className="text-xs md:text-sm text-gray-500">متاجر جديدة</p>
+                <p className="text-lg md:text-2xl font-extrabold text-gray-800 mt-1">{stats.newStores}</p>
               </div>
-              <div className="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center text-xl">🛒</div>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-pink-100 rounded-xl flex items-center justify-center text-base md:text-xl">🛒</div>
             </div>
-            <p className="text-xs text-gray-400">كل يوم ينضم تجار جدد</p>
+            <p className="text-xs text-gray-400">انضمام يومي</p>
           </div>
         </div>
       </div>
 
-      {/* أفضل المنتجات مبيعاً */}
+      {/* أفضل المنتجات مبيعاً - شبكة متجاوبة */}
       <div>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">أفضل المنتجات مبيعاً</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-3 md:mb-4">أفضل المنتجات مبيعاً</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
           {bestSelling.map(product => (
             <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-              <div className="h-40 bg-gray-50 flex items-center justify-center p-2 overflow-hidden">
+              <div className="h-32 md:h-40 bg-gray-50 flex items-center justify-center p-2 overflow-hidden">
                 <img
                   src={product.image_url || `https://via.placeholder.com/200?text=${encodeURIComponent(product.name)}`}
                   alt={product.name}
                   className="max-h-full max-w-full object-contain"
                 />
               </div>
-              <div className="p-3 flex-1 flex flex-col">
-                <p className="font-semibold text-gray-800 text-sm line-clamp-2 min-h-[2.5rem]">{product.name}</p>
-                <p className="text-purple-600 font-bold mt-1">{product.price} ر.س</p>
+              <div className="p-2 md:p-3 flex-1 flex flex-col">
+                <p className="font-semibold text-gray-800 text-xs md:text-sm line-clamp-2 min-h-[2rem] md:min-h-[2.5rem]">{product.name}</p>
+                <p className="text-purple-600 font-bold text-sm md:text-base mt-1">{product.price} ر.س</p>
               </div>
             </div>
           ))}
@@ -176,13 +174,13 @@ export default function CustomerDashboard({ onNavigate }) {
         </div>
       </div>
 
-      {/* قسم ترقية الباقة */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-2xl p-6 text-center shadow-lg">
-        <h2 className="text-xl font-bold mb-2">ابدأ البيع الآن</h2>
-        <p className="text-sm opacity-90 mb-4">قم بترقية باقتك وابدأ في تحقيق أرباحك مع مكسب</p>
+      {/* قسم ترقية الباقة - تحسين للموبايل */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-2xl p-4 md:p-6 text-center shadow-lg">
+        <h2 className="text-base md:text-xl font-bold mb-2">ابدأ البيع الآن</h2>
+        <p className="text-xs md:text-sm opacity-90 mb-3 md:mb-4">قم بترقية باقتك وابدأ في تحقيق أرباحك مع مكسب</p>
         <button
           onClick={() => onNavigate('pricing')}
-          className="inline-flex items-center gap-2 bg-white text-purple-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors"
+          className="inline-flex items-center gap-2 bg-white text-purple-700 px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base hover:bg-gray-100 transition-colors"
         >
           ترقية الاشتراك
         </button>
