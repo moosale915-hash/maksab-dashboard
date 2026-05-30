@@ -2,10 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import PublicHeader from './components/PublicHeader';
-import Dashboard from './pages/Dashboard';
-import CustomerDashboard from './pages/CustomerDashboard';
 import CustomerCatalog from './pages/CustomerCatalog';
-import Products from './pages/Products';
+import CustomerDashboard from './pages/CustomerDashboard';
 import ImportList from './pages/ImportList';
 import Orders from './pages/Orders';
 import LandingPage from './pages/LandingPage';
@@ -50,14 +48,13 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isInitialized, setIsInitialized] = useState(false);
-  const isLoggingIn = useRef(false);
+  const initDone = useRef(false); // لمنع تهيئة متعددة
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
-  // دالة لاستخراج الاسم المناسب للعرض
   const getDisplayName = (fullName, email) => {
     if (fullName && fullName.trim()) return fullName;
     if (email) return email.split('@')[0];
@@ -174,8 +171,8 @@ export default function App() {
   };
 
   const handleLogin = async (admin = false) => {
-    if (isLoggingIn.current) return;
-    isLoggingIn.current = true;
+    // إذا كان المستخدم قد سجل دخوله بالفعل، لا تفعل شيئاً
+    if (isLoggedIn) return;
     const returnTo = localStorage.getItem('returnTo');
     localStorage.removeItem('returnTo');
     const success = await performLogin(admin, false);
@@ -184,11 +181,13 @@ export default function App() {
     } else if (success) {
       navigate('dashboard');
     }
-    isLoggingIn.current = false;
   };
 
+  // تهيئة واحدة فقط
   useEffect(() => {
-    let isMounted = true;
+    if (initDone.current) return;
+    initDone.current = true;
+
     const init = async () => {
       const savedPage = localStorage.getItem('currentPage');
       const validPages = [
@@ -198,30 +197,30 @@ export default function App() {
         'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'
       ];
       let targetPage = savedPage && validPages.includes(savedPage) ? savedPage : 'home';
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // جلب is_admin
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', session.user.id)
           .maybeSingle();
         const isUserAdmin = profile?.is_admin || false;
-        if (isMounted) {
-          setIsLoggedIn(true);
-          setIsAdmin(isUserAdmin);
-          await loadImportList(session.user.id);
-          await fetchUserSubscription(session.user.id);
-          const { data: profileName } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          const displayName = getDisplayName(profileName?.full_name, session.user.email);
-          setUserName(displayName);
-          if (targetPage === 'login' || targetPage === 'register') {
-            targetPage = 'dashboard';
-            localStorage.setItem('currentPage', 'dashboard');
-          }
+        setIsLoggedIn(true);
+        setIsAdmin(isUserAdmin);
+        await loadImportList(session.user.id);
+        await fetchUserSubscription(session.user.id);
+        const { data: profileName } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        const displayName = getDisplayName(profileName?.full_name, session.user.email);
+        setUserName(displayName);
+        if (targetPage === 'login' || targetPage === 'register') {
+          targetPage = 'dashboard';
+          localStorage.setItem('currentPage', 'dashboard');
         }
       } else {
         const protectedPages = ['dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats', 'subscription', 'wallet', 'support-tickets', 'payment', 'integrations', 'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'];
@@ -230,13 +229,10 @@ export default function App() {
           localStorage.setItem('currentPage', 'home');
         }
       }
-      if (isMounted) {
-        setCurrentPage(targetPage);
-        setIsInitialized(true);
-      }
+      setCurrentPage(targetPage);
+      setIsInitialized(true);
     };
     init();
-    return () => { isMounted = false; };
   }, []);
 
   const isDashboard = [
