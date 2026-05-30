@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { APP_NAME } from '../config';
 
@@ -11,6 +11,22 @@ export default function RegisterPage({ onNavigate, onLogin }) {
   const [loading, setLoading] = useState(false);
 
   const isValidPhone = (phone) => /^[0-9]{10,15}$/.test(phone);
+
+  // التحقق من الجلسة عند تحميل الصفحة (بعد العودة من Google)
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        onLogin(profile?.is_admin || false);
+      }
+    };
+    checkSession();
+  }, [onLogin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,7 +81,6 @@ export default function RegisterPage({ onNavigate, onLogin }) {
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
-          queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       });
       if (error) throw error;
@@ -89,21 +104,21 @@ export default function RegisterPage({ onNavigate, onLogin }) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك الكامل" required />
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك الكامل" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@mail.com" required />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@mail.com" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجوال <span className="text-red-500">*</span></label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" required />
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700">
+          <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-md disabled:opacity-50">
             {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب والدخول'}
           </button>
 
@@ -113,7 +128,7 @@ export default function RegisterPage({ onNavigate, onLogin }) {
             <div className="flex-1 h-px bg-gray-200"></div>
           </div>
 
-          <button type="button" onClick={handleGoogleRegister} className="w-full flex items-center justify-center gap-3 py-3 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50">
+          <button type="button" onClick={handleGoogleRegister} className="w-full flex items-center justify-center gap-3 py-3 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { APP_NAME } from '../config';
 
@@ -7,6 +7,23 @@ export default function Login({ onLogin, onNavigate }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // التحقق من الجلسة عند تحميل الصفحة (بعد العودة من Google)
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // جلب صلاحيات الأدمن
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        onLogin(profile?.is_admin || false);
+      }
+    };
+    checkSession();
+  }, [onLogin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,23 +58,16 @@ export default function Login({ onLogin, onNavigate }) {
   const handleGoogleLogin = async () => {
     setError('');
     try {
-      // لا نستخدم redirectTo مخصص، دع Supabase يستخدم الإعدادات الافتراضية
-      // لكننا نمرر الخيار لتجنب مشاكل
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin, // العودة إلى جذر الموقع
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          redirectTo: window.location.origin, // العودة إلى الصفحة الرئيسية
         },
       });
       if (error) throw error;
-      // بعد هذا، ستغادر الصفحة إلى Google، وعند العودة ستتم معالجتها بواسطة App.jsx
     } catch (err) {
-      console.error('Google OAuth error:', err);
-      setError(err.message || 'حدث خطأ أثناء الاتصال بـ Google. تأكد من إعدادات OAuth في Supabase.');
+      console.error(err);
+      setError(err.message || 'حدث خطأ أثناء الاتصال بـ Google');
     }
   };
 
