@@ -10,10 +10,7 @@ export default function RegisterPage({ onNavigate, onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isValidPhone = (phone) => {
-    const phoneRegex = /^[0-9]{10,15}$/;
-    return phoneRegex.test(phone);
-  };
+  const isValidPhone = (phone) => /^[0-9]{10,15}$/.test(phone);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,22 +18,17 @@ export default function RegisterPage({ onNavigate, onLogin }) {
     setLoading(true);
 
     if (!name || !email || !phone || !password) {
-      setError('جميع الحقول مطلوبة (الاسم، البريد الإلكتروني، رقم الجوال، كلمة المرور)');
+      setError('جميع الحقول مطلوبة');
       setLoading(false);
       return;
     }
-
     if (!isValidPhone(phone)) {
-      setError('رقم الجوال غير صحيح. يجب أن يحتوي على أرقام فقط (10-15 رقم)');
+      setError('رقم الجوال غير صحيح');
       setLoading(false);
       return;
     }
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
@@ -44,20 +36,12 @@ export default function RegisterPage({ onNavigate, onLogin }) {
     }
 
     if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          full_name: name,
-          phone: phone,
-          is_admin: false,
-        });
-
-      if (profileError) {
-        console.error('خطأ في إدراج profile:', profileError);
-        setError('تم إنشاء الحساب ولكن حدث خطأ في حفظ الاسم. يرجى تحديثه من الإعدادات لاحقاً.');
-      }
-
+      await supabase.from('profiles').insert({
+        id: data.user.id,
+        full_name: name,
+        phone: phone,
+        is_admin: false,
+      });
       const expiresAt = new Date();
       expiresAt.setMonth(expiresAt.getMonth() + 1);
       await supabase.from('user_subscriptions').insert({
@@ -70,7 +54,6 @@ export default function RegisterPage({ onNavigate, onLogin }) {
         started_at: new Date(),
         expires_at: expiresAt,
       });
-
       onLogin(false);
     }
   };
@@ -78,17 +61,17 @@ export default function RegisterPage({ onNavigate, onLogin }) {
   const handleGoogleRegister = async () => {
     setError('');
     try {
-      // التوجيه إلى الصفحة الرئيسية أولاً، ثم App.jsx سيتعامل مع الجلسة
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin, // التوجيه إلى الصفحة الرئيسية بدلاً من dashboard
+          redirectTo: window.location.origin,
+          queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       });
       if (error) throw error;
     } catch (err) {
-      console.error('Google OAuth error:', err);
-      setError(err.message || 'حدث خطأ أثناء الاتصال بـ Google');
+      console.error(err);
+      setError(err.message || 'فشل الاتصال بـ Google');
     }
   };
 
@@ -106,22 +89,21 @@ export default function RegisterPage({ onNavigate, onLogin }) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك الكامل" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك الكامل" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني (للتسجيل والدخول)</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@mail.com" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
+            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@mail.com" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجوال <span className="text-red-500">* إجباري</span></label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
-            <p className="text-xs text-gray-400 mt-1">أدخل رقم الجوال بدون أصفار البداية أو بـ 0</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجوال <span className="text-red-500">*</span></label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-md disabled:opacity-50">
+          <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700">
             {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب والدخول'}
           </button>
 
