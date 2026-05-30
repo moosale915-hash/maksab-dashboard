@@ -77,13 +77,19 @@ export default function RegisterPage({ onNavigate, onLogin }) {
 
   const handleGoogleRegister = async () => {
     setError('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/dashboard', // يمكن تخصيصه
-      },
-    });
-    if (error) setError(error.message);
+    try {
+      // التوجيه إلى الصفحة الرئيسية أولاً، ثم App.jsx سيتعامل مع الجلسة
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin, // التوجيه إلى الصفحة الرئيسية بدلاً من dashboard
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error('Google OAuth error:', err);
+      setError(err.message || 'حدث خطأ أثناء الاتصال بـ Google');
+    }
   };
 
   return (

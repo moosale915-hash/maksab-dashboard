@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { APP_NAME } from '../config';
 
@@ -7,15 +7,6 @@ export default function Login({ onLogin, onNavigate }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [returnTo, setReturnTo] = useState(null);
-
-  useEffect(() => {
-    const storedReturn = localStorage.getItem('returnTo');
-    if (storedReturn) {
-      setReturnTo(storedReturn);
-      localStorage.removeItem('returnTo');
-    }
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,7 +25,6 @@ export default function Login({ onLogin, onNavigate }) {
         return;
       }
 
-      // جلب صلاحيات الأدمن
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_admin')
@@ -50,15 +40,18 @@ export default function Login({ onLogin, onNavigate }) {
 
   const handleGoogleLogin = async () => {
     setError('');
-    // استخدام الرابط الحالي أو الصفحة التي كان يحاول الوصول إليها
-    const redirectUrl = returnTo ? window.location.origin + '/' + returnTo : window.location.origin;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-      },
-    });
-    if (error) setError(error.message);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin, // العودة للصفحة الرئيسية، ثم App سيتعامل مع الجلسة
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'حدث خطأ أثناء الاتصال بـ Google');
+    }
   };
 
   return (
