@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { APP_NAME } from '../config';
 
@@ -7,9 +7,18 @@ export default function Login({ onLogin, onNavigate }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [returnTo, setReturnTo] = useState(null);
+
+  useEffect(() => {
+    const storedReturn = localStorage.getItem('returnTo');
+    if (storedReturn) {
+      setReturnTo(storedReturn);
+      localStorage.removeItem('returnTo');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // مهم جداً لمنع إعادة تحميل الصفحة
+    e.preventDefault();
     setError('');
     setLoading(true);
     
@@ -25,27 +34,31 @@ export default function Login({ onLogin, onNavigate }) {
         return;
       }
 
-      // الحصول على صلاحيات الأدمن
+      // جلب صلاحيات الأدمن
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', data.user.id)
-        .maybeSingle(); // استخدم maybeSingle لتجنب الخطأ 406
+        .maybeSingle();
 
       onLogin(profile?.is_admin || false);
-      // لا تضع navigate هنا لأن onLogin ستقوم بذلك (راجع App.jsx)
     } catch (err) {
-      console.error(err);
       setError('حدث خطأ غير متوقع');
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
+    // استخدام الرابط الحالي أو الصفحة التي كان يحاول الوصول إليها
+    const redirectUrl = returnTo ? window.location.origin + '/' + returnTo : window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+      },
     });
-    if (error) alert(error.message);
+    if (error) setError(error.message);
   };
 
   return (
