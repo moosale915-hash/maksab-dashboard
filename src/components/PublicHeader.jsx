@@ -41,10 +41,10 @@ export default function PublicHeader({ onNavigate, isLoggedIn }) {
 
       {/* الهيدر الأساسي */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 sticky top-0 z-50 py-2 md:py-0">
-        <div className="max-w-7xl mx-auto px-3 md:px-6 flex justify-between items-center h-14 md:h-20">
-          {/* اللوجو */}
+        <div className="max-w-7xl mx-auto px-3 md:px-6 flex justify-between items-center min-h-16 md:min-h-20">
+          {/* اللوجو - تكبير الحجم */}
           <div className="cursor-pointer flex items-center" onClick={() => onNavigate('home')}>
-            <img src="/images/logo.png" alt={APP_NAME} className="h-10 md:h-28 w-auto object-contain" />
+            <img src="/images/logo.png" alt={APP_NAME} className="h-14 md:h-32 w-auto object-contain" />
           </div>
 
           {/* زر القائمة للهاتف (هامبورغر) */}
@@ -107,31 +107,34 @@ export default function PublicHeader({ onNavigate, isLoggedIn }) {
           </nav>
         </div>
 
-        {/* القائمة الجانبية المنزلقة للموبايل */}
-        <div className={`fixed inset-0 z-50 lg:hidden transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} top-0 right-0 w-64 bg-white shadow-xl h-full overflow-y-auto`}>
+        {/* القائمة الجانبية المنزلقة للموبايل - بدون تمرير داخلي (height auto) */}
+        <div
+          className={`fixed top-0 right-0 z-50 lg:hidden transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} w-72 bg-white shadow-xl h-auto max-h-screen`}
+          style={{ overflowY: 'auto' }}
+        >
           <div className="p-4 flex justify-between items-center border-b">
-            <img src="/images/logo.png" alt={APP_NAME} className="h-8 w-auto" />
+            <img src="/images/logo.png" alt={APP_NAME} className="h-10 w-auto" />
             <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-lg hover:bg-gray-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <nav className="flex flex-col p-4 space-y-3 text-right">
-            <button onClick={() => handleNavigate('catalog')} className="py-2 text-gray-700 hover:text-purple-600">تصفح المنتجات</button>
-            <button onClick={() => handleNavigate('pricing')} className="py-2 text-gray-700 hover:text-purple-600">الباقات</button>
-            <button onClick={() => handleNavigate('services')} className="py-2 text-gray-700 hover:text-purple-600">خدماتنا</button>
-            <button onClick={() => handleNavigate('support')} className="py-2 text-gray-700 hover:text-purple-600">الدعم الفني</button>
-            <button onClick={() => handleNavigate('how')} className="py-2 text-gray-700 hover:text-purple-600">كيف نعمل</button>
-            <button onClick={() => handleNavigate('about')} className="py-2 text-gray-700 hover:text-purple-600">من نحن</button>
-            <button onClick={() => handleNavigate('contact')} className="py-2 text-gray-700 hover:text-purple-600">اتصل بنا</button>
+          <nav className="flex flex-col p-4 space-y-2 text-right">
+            <button onClick={() => handleNavigate('catalog')} className="py-2 text-gray-700 hover:text-purple-600 text-base">تصفح المنتجات</button>
+            <button onClick={() => handleNavigate('pricing')} className="py-2 text-gray-700 hover:text-purple-600 text-base">الباقات</button>
+            <button onClick={() => handleNavigate('services')} className="py-2 text-gray-700 hover:text-purple-600 text-base">خدماتنا</button>
+            <button onClick={() => handleNavigate('support')} className="py-2 text-gray-700 hover:text-purple-600 text-base">الدعم الفني</button>
+            <button onClick={() => handleNavigate('how')} className="py-2 text-gray-700 hover:text-purple-600 text-base">كيف نعمل</button>
+            <button onClick={() => handleNavigate('about')} className="py-2 text-gray-700 hover:text-purple-600 text-base">من نحن</button>
+            <button onClick={() => handleNavigate('contact')} className="py-2 text-gray-700 hover:text-purple-600 text-base">اتصل بنا</button>
             <div className="pt-4 border-t">
               {isLoggedIn ? (
-                <button onClick={() => handleNavigate('dashboard')} className="w-full bg-purple-600 text-white py-2 rounded-xl">لوحة التحكم</button>
+                <button onClick={() => handleNavigate('dashboard')} className="w-full bg-purple-600 text-white py-2 rounded-xl text-base">لوحة التحكم</button>
               ) : (
                 <div className="space-y-2">
-                  <button onClick={() => handleNavigate('register')} className="w-full bg-purple-600 text-white py-2 rounded-xl">تسجيل جديد</button>
-                  <button onClick={() => handleNavigate('login')} className="w-full border border-purple-200 text-purple-700 py-2 rounded-xl">تسجيل الدخول</button>
+                  <button onClick={() => handleNavigate('register')} className="w-full bg-purple-600 text-white py-2 rounded-xl text-base">تسجيل جديد</button>
+                  <button onClick={() => handleNavigate('login')} className="w-full border border-purple-200 text-purple-700 py-2 rounded-xl text-base">تسجيل الدخول</button>
                 </div>
               )}
             </div>
