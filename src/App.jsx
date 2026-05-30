@@ -48,7 +48,7 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // NEW: حالة القائمة الجانبية للموبايل
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const initDone = useRef(false);
   const loginInProgress = useRef(false);
 
@@ -112,6 +112,23 @@ export default function App() {
     const displayName = getDisplayName(profile?.full_name, user.email);
     setUserName(displayName);
     return true;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut(); // تسجيل الخروج من Supabase
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    setUserSubscription(null);
+    setUserName('');
+    setImportList([]);
+    setPageData(null);
+    localStorage.removeItem('currentPage');
+    setCurrentPage('home');
+    showToast('تم تسجيل الخروج بنجاح', 'success');
   };
 
   const requireSubscription = (actionName) => {
@@ -300,7 +317,7 @@ export default function App() {
           onNavigate={navigate} 
           importCount={importList.length} 
           isAdmin={isAdmin} 
-          onLogout={() => { setIsLoggedIn(false); setPageData(null); localStorage.removeItem('currentPage'); }} 
+          onLogout={handleLogout}
           userSubscription={userSubscription} 
           userName={userName}
           isOpen={isSidebarOpen}
@@ -314,7 +331,7 @@ export default function App() {
           <Header 
             userSubscription={userSubscription} 
             userName={userName} 
-            onLogout={() => { setIsLoggedIn(false); setPageData(null); localStorage.removeItem('currentPage'); }} 
+            onLogout={handleLogout}
             onNavigate={navigate}
             onMenuClick={() => setIsSidebarOpen(true)}
           />

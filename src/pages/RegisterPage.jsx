@@ -12,7 +12,6 @@ export default function RegisterPage({ onNavigate, onLogin }) {
 
   const isValidPhone = (phone) => /^[0-9]{10,15}$/.test(phone);
 
-  // التحقق من الجلسة عند تحميل الصفحة (بعد العودة من Google)
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -77,10 +76,13 @@ export default function RegisterPage({ onNavigate, onLogin }) {
   const handleGoogleRegister = async () => {
     setError('');
     try {
+      const redirectUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://maksab-dashboard.vercel.app' 
+        : 'http://localhost:5173';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: redirectUrl,
         },
       });
       if (error) throw error;

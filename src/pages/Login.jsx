@@ -13,7 +13,6 @@ export default function Login({ onLogin, onNavigate }) {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // جلب صلاحيات الأدمن
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_admin')
@@ -58,16 +57,20 @@ export default function Login({ onLogin, onNavigate }) {
   const handleGoogleLogin = async () => {
     setError('');
     try {
+      // استخدم الرابط الأساسي للموقع (يمكن تغييره حسب البيئة)
+      const redirectUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://maksab-dashboard.vercel.app' 
+        : 'http://localhost:5173';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin, // العودة إلى الصفحة الرئيسية
+          redirectTo: redirectUrl,
         },
       });
       if (error) throw error;
     } catch (err) {
-      console.error(err);
-      setError(err.message || 'حدث خطأ أثناء الاتصال بـ Google');
+      console.error('Google OAuth error:', err);
+      setError(err.message || 'حدث خطأ أثناء الاتصال بـ Google. تأكد من إعدادات OAuth في Supabase.');
     }
   };
 
