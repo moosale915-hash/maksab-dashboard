@@ -48,7 +48,8 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isInitialized, setIsInitialized] = useState(false);
-  const initDone = useRef(false); // لمنع تهيئة متعددة
+  const initDone = useRef(false);
+  const loginInProgress = useRef(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -171,15 +172,20 @@ export default function App() {
   };
 
   const handleLogin = async (admin = false) => {
-    // إذا كان المستخدم قد سجل دخوله بالفعل، لا تفعل شيئاً
-    if (isLoggedIn) return;
-    const returnTo = localStorage.getItem('returnTo');
-    localStorage.removeItem('returnTo');
-    const success = await performLogin(admin, false);
-    if (success && returnTo && returnTo !== 'login' && returnTo !== 'register') {
-      navigate(returnTo);
-    } else if (success) {
-      navigate('dashboard');
+    // منع التنفيذ المتكرر أثناء تسجيل الدخول
+    if (loginInProgress.current) return;
+    loginInProgress.current = true;
+    try {
+      const returnTo = localStorage.getItem('returnTo');
+      localStorage.removeItem('returnTo');
+      const success = await performLogin(admin, false);
+      if (success && returnTo && returnTo !== 'login' && returnTo !== 'register') {
+        navigate(returnTo);
+      }
+      // success بالفعل قام بتعيين currentPage = 'dashboard' في performLogin (عند preservePage=false)
+      // لذلك لا حاجة لاستدعاء navigate مرة أخرى
+    } finally {
+      loginInProgress.current = false;
     }
   };
 
@@ -200,7 +206,6 @@ export default function App() {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // جلب is_admin
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
