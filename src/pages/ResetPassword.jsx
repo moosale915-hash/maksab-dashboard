@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { APP_NAME } from '../config';
 
@@ -8,38 +8,6 @@ export default function ResetPassword({ onNavigate, onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [isValid, setIsValid] = useState(false);
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    // الاستماع لأحداث المصادقة
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (session && session.user)) {
-        setIsValid(true);
-        setChecking(false);
-      } else {
-        // انتظر قليلاً ثم إذا لم توجد جلسة أظهر خطأ
-        setTimeout(() => {
-          if (!isValid) {
-            setError('رابط إعادة التعيين غير صالح أو منتهي. يرجى طلب رابط جديد.');
-            setChecking(false);
-          }
-        }, 1000);
-      }
-    });
-
-    // تحقق أولي
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsValid(true);
-        setChecking(false);
-      } else {
-        // ربما الرابط لم يُعالج بعد
-      }
-    });
-
-    return () => subscription?.unsubscribe();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,9 +37,9 @@ export default function ResetPassword({ onNavigate, onLogin }) {
       });
       if (updateError) throw updateError;
 
-      setMessage('✅ تم تغيير كلمة المرور بنجاح. سيتم توجيهك إلى لوحة التحكم...');
+      setMessage('✅ تم تغيير كلمة المرور بنجاح. جاري توجيهك إلى لوحة التحكم...');
       setTimeout(() => {
-        onLogin(false); // نفترض أن المستخدم ليس أدمن
+        onLogin(false); // توجيه إلى لوحة التحكم
       }, 2000);
     } catch (err) {
       console.error(err);
@@ -79,26 +47,6 @@ export default function ResetPassword({ onNavigate, onLogin }) {
       setLoading(false);
     }
   };
-
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (!isValid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">رابط غير صالح</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button onClick={() => onNavigate('forgot-password')} className="bg-purple-600 text-white px-6 py-2 rounded-xl">طلب رابط جديد</button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-white px-4">
@@ -116,20 +64,44 @@ export default function ResetPassword({ onNavigate, onLogin }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور الجديدة</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 border border-gray-200 rounded-xl" required />
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none"
+              required
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">تأكيد كلمة المرور الجديدة</label>
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 border border-gray-200 rounded-xl" required />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none"
+              required
+            />
           </div>
 
-          <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-md disabled:opacity-50"
+          >
             {loading ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
           </button>
 
           <div className="text-center">
-            <button type="button" onClick={() => onNavigate('login')} className="text-purple-600 hover:underline text-sm">⬅ العودة إلى تسجيل الدخول</button>
+            <button
+              type="button"
+              onClick={() => onNavigate('login')}
+              className="text-purple-600 hover:underline text-sm"
+            >
+              ⬅ العودة إلى تسجيل الدخول
+            </button>
           </div>
         </form>
       </div>
