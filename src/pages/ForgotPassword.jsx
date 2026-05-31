@@ -21,14 +21,15 @@ export default function ForgotPassword({ onNavigate }) {
     }
 
     try {
-      // رابط إعادة التعيين سيكون `https://maksabsa.com/reset-password`
+      // تحديد رابط إعادة التعيين بناءً على البيئة
+      const redirectUrl = `${window.location.origin}/reset-password`;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
 
       if (error) throw error;
 
-      setMessage('✅ تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.');
+      setMessage('✅ تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد (بما في ذلك البريد العشوائي).');
       setEmail('');
     } catch (err) {
       console.error(err);
