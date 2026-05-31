@@ -39,6 +39,39 @@ import Payment from './pages/Payment';
 import Integrations from './pages/Integrations';
 import { supabase } from './lib/supabaseClient';
 
+// دالة لتحويل مسار الرابط (pathname) إلى اسم الصفحة
+function getPageFromPath(pathname) {
+  const path = pathname.replace(/^\/+/, ''); // إزالة الشرطة المائلة الأولى
+  if (path === '') return 'home';
+  if (path === 'reset-password') return 'reset-password';
+  if (path === 'forgot-password') return 'forgot-password';
+  if (path === 'login') return 'login';
+  if (path === 'register') return 'register';
+  if (path === 'catalog') return 'catalog';
+  if (path === 'pricing') return 'pricing';
+  if (path === 'services') return 'services';
+  if (path === 'support') return 'support';
+  if (path === 'shipping') return 'shipping';
+  if (path === 'integrations') return 'integrations';
+  if (path === 'how') return 'how';
+  if (path === 'about') return 'about';
+  if (path === 'contact') return 'contact';
+  if (path === 'dashboard') return 'dashboard';
+  if (path === 'products') return 'products';
+  if (path === 'importList') return 'importList';
+  if (path === 'orders') return 'orders';
+  if (path === 'shipments') return 'shipments';
+  if (path === 'my-products') return 'my-products';
+  if (path === 'dashboard-stats') return 'dashboard-stats';
+  if (path === 'subscription') return 'subscription';
+  if (path === 'wallet') return 'wallet';
+  if (path === 'support-tickets') return 'support-tickets';
+  if (path === 'payment') return 'payment';
+  if (path === 'integrations') return 'integrations';
+  if (path.startsWith('admin-')) return path;
+  return 'home';
+}
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [pageData, setPageData] = useState(null);
@@ -211,7 +244,15 @@ export default function App() {
     initDone.current = true;
 
     const init = async () => {
+      // أولاً: تحديد الصفحة من الرابط (URL) إذا كان مباشراً
+      let targetPage = getPageFromPath(window.location.pathname);
+      
+      // ثانياً: إذا كان هناك صفحة محفوظة في localStorage، نعطيها الأولوية (إلا إذا كانت الصفحة الحالية من الرابط هي reset-password أو forgot-password)
       const savedPage = localStorage.getItem('currentPage');
+      if (savedPage && targetPage === 'home') {
+        targetPage = savedPage;
+      }
+      
       const validPages = [
         'home', 'catalog', 'pricing', 'services', 'support', 'shipping', 'integrations', 'how', 'about', 'contact', 'register', 'login',
         'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats',
@@ -219,7 +260,7 @@ export default function App() {
         'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners',
         'forgot-password', 'reset-password'
       ];
-      let targetPage = savedPage && validPages.includes(savedPage) ? savedPage : 'home';
+      if (!validPages.includes(targetPage)) targetPage = 'home';
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
