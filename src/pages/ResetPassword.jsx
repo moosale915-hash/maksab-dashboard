@@ -9,21 +9,46 @@ export default function ResetPassword({ onNavigate, onLogin }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isValidToken, setIsValidToken] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
-  // التحقق من وجود جلسة (token) صالحة من الرابط
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // يوجد جلسة نشطة (بعد النقر على الرابط)
+    // الاستماع لأحداث التغيير في الجلسة (مثل استلام التوكن من الرابط)
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, session);
+      if (event === 'PASSWORD_RECOVERY') {
+        // حدث خاص بإعادة تعيين كلمة المرور
         setIsValidToken(true);
+        setIsChecking(false);
+      } else if (session) {
+        // إذا كان هناك جلسة عادية (مستخدم مسجل)
+        setIsValidToken(true);
+        setIsChecking(false);
       } else {
-        // لا توجد جلسة، ربما وصل المستخدم إلى هذه الصفحة بطريقة خاطئة
         setIsValidToken(false);
+        setIsChecking(false);
         setError('رابط إعادة التعيين غير صالح أو منتهي الصلاحية. يرجى طلب رابط جديد.');
       }
+    });
+
+    // أيضاً تحقق من الجلسة الحالية فوراً
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsValidToken(true);
+        setIsChecking(false);
+      } else if (!session && !isValidToken) {
+        // إذا لم نستقبل حدث PASSWORD_RECOVERY بعد، ننتظر قليلاً
+        setTimeout(() => {
+          if (!isValidToken) {
+            setError('لم يتم العثور على جلسة صالحة. تأكد من استخدام الرابط الصحيح.');
+            setIsChecking(false);
+          }
+        }, 1000);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
     };
-    checkSession();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -57,21 +82,13 @@ export default function ResetPassword({ onNavigate, onLogin }) {
 
       if (updateError) throw updateError;
 
-      setMessage('✅ تم تغيير كلمة المرور بنجاح. جاري توجيهك إلى لوحة التحكم...');
+      setMessage('✅ تم تغيير كلمة المرور بنجاح. سيتم توجيهك إلى لوحة التحكم...');
       
-      // بعد تغيير كلمة المرور، نجلب معلومات المستخدم ونسجل دخوله تلقائياً
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .maybeSingle();
-        onLogin(profile?.is_admin || false);
-      } else {
-        // إذا لم يتم التعرف على المستخدم، نوجه إلى صفحة تسجيل الدخول
-        setTimeout(() => onNavigate('login'), 2000);
-      }
+      // الانتظار قليلاً ثم توجيه المستخدم إلى لوحة التحكم
+      setTimeout(() => {
+        // نستخدم onLogin لتحديث حالة التطبيق ومن ثم التوجيه تلقائياً
+        onLogin(false); // المستخدم ليس أدمن بشكل افتراضي
+      }, 2000);
     } catch (err) {
       console.error(err);
       setError(err.message || 'حدث خطأ أثناء تغيير كلمة المرور. يرجى المحاولة مرة أخرى.');
@@ -79,10 +96,29 @@ export default function ResetPassword({ onNavigate, onLogin }) {
     }
   };
 
-  if (!isValidToken && !error) {
+  if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-white px-4">
         <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!isValidToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-white px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">رابط غير صالح</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => onNavigate('forgot-password')}
+              className="bg-purple-600 text-white px-6 py-2 rounded-xl font-semibold hover:bg-purple-700"
+            >
+              طلب رابط جديد
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
