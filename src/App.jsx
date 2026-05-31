@@ -41,7 +41,7 @@ import { supabase } from './lib/supabaseClient';
 
 // دالة لتحويل مسار الرابط (pathname) إلى اسم الصفحة
 function getPageFromPath(pathname) {
-  const path = pathname.replace(/^\/+/, ''); // إزالة الشرطة المائلة الأولى
+  const path = pathname.replace(/^\/+/, '');
   if (path === '') return 'home';
   if (path === 'reset-password') return 'reset-password';
   if (path === 'forgot-password') return 'forgot-password';
@@ -244,15 +244,11 @@ export default function App() {
     initDone.current = true;
 
     const init = async () => {
-      // أولاً: تحديد الصفحة من الرابط (URL) إذا كان مباشراً
       let targetPage = getPageFromPath(window.location.pathname);
-      
-      // ثانياً: إذا كان هناك صفحة محفوظة في localStorage، نعطيها الأولوية (إلا إذا كانت الصفحة الحالية من الرابط هي reset-password أو forgot-password)
       const savedPage = localStorage.getItem('currentPage');
       if (savedPage && targetPage === 'home') {
         targetPage = savedPage;
       }
-      
       const validPages = [
         'home', 'catalog', 'pricing', 'services', 'support', 'shipping', 'integrations', 'how', 'about', 'contact', 'register', 'login',
         'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats',
@@ -372,7 +368,11 @@ export default function App() {
       )}
       <div className="flex-1 flex flex-col overflow-y-auto">
         {!isDashboard || !isLoggedIn ? (
-          <PublicHeader onNavigate={navigate} isLoggedIn={isLoggedIn} />
+          <PublicHeader 
+            onNavigate={navigate} 
+            isLoggedIn={isLoggedIn} 
+            hideDashboardButton={currentPage === 'reset-password'} 
+          />
         ) : (
           <Header 
             userSubscription={userSubscription} 
