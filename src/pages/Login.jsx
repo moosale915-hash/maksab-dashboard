@@ -57,9 +57,8 @@ export default function Login({ onLogin, onNavigate }) {
   const handleGoogleLogin = async () => {
     setError('');
     try {
-      // استخدم الرابط الأساسي للموقع (يمكن تغييره حسب البيئة)
       const redirectUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://maksab-dashboard.vercel.app' 
+        ? 'https://maksabsa.com' 
         : 'http://localhost:5173';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -93,6 +92,18 @@ export default function Login({ onLogin, onNavigate }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 focus:outline-none" required />
           </div>
+
+          {/* رابط نسيت كلمة المرور */}
+          <div className="text-left mt-1">
+            <button
+              type="button"
+              onClick={() => onNavigate('forgot-password')}
+              className="text-sm text-purple-500 hover:underline"
+            >
+              نسيت كلمة المرور؟
+            </button>
+          </div>
+
           <button type="submit" disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-md disabled:opacity-50">
             {loading ? 'جاري التحميل...' : 'دخول'}
           </button>

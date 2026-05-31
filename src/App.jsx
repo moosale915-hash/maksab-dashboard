@@ -18,6 +18,8 @@ import SupportPage from './pages/SupportPage';
 import ShippingPage from './pages/ShippingPage';
 import IntegrationsPage from './pages/IntegrationsPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminProducts from './pages/AdminProducts';
 import AdminCategories from './pages/AdminCategories';
@@ -116,7 +118,7 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut(); // تسجيل الخروج من Supabase
+      await supabase.auth.signOut();
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -214,7 +216,8 @@ export default function App() {
         'home', 'catalog', 'pricing', 'services', 'support', 'shipping', 'integrations', 'how', 'about', 'contact', 'register', 'login',
         'dashboard', 'products', 'importList', 'orders', 'settings', 'shipments', 'my-products', 'dashboard-stats',
         'subscription', 'wallet', 'support-tickets', 'payment', 'integrations',
-        'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners'
+        'admin-dashboard', 'admin-products', 'admin-categories', 'admin-testimonials', 'admin-stats', 'admin-plans', 'admin-faq', 'admin-content', 'admin-banners',
+        'forgot-password', 'reset-password'
       ];
       let targetPage = savedPage && validPages.includes(savedPage) ? savedPage : 'home';
 
@@ -304,6 +307,8 @@ export default function App() {
         case 'about': return <AboutUs onNavigate={navigate} />;
         case 'contact': return <ContactUs onNavigate={navigate} />;
         case 'register': return <RegisterPage onNavigate={navigate} onLogin={handleLogin} />;
+        case 'forgot-password': return <ForgotPassword onNavigate={navigate} />;
+        case 'reset-password': return <ResetPassword onNavigate={navigate} onLogin={handleLogin} />;
         default: return <LandingPage onNavigate={navigate} />;
       }
     }
